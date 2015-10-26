@@ -1,12 +1,10 @@
 /*  Merchant (Vendor Manager)
 |   Author: @Sklug  aka TheGenomeWhisperer
 |
-|   To Be Used with "InsertContinentName.cs"
+|   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
 |   Last Update 25th Oct, 2015 */
-
-
 
 
 public class DreanorMerchants {
@@ -17,8 +15,17 @@ public class DreanorMerchants {
 	// Default Constructor()
 	public DreanorMerchants() {}
 	
-	//
-	public static List<object> getMerchantInfo(int zoneID, bool factionIsHorde) {
+	// Method:		"getMerchantInfo(int,bool,int)
+	// 				vendorType represented by numbers 1-3
+	//				1 = Food && Drink
+	//				2 = Repair
+	public static List<object> getMerchantInfo(int zoneID, bool factionIsHorde, int vendorType) {
+			// Default list in case of no result
+			List<object> result = new List<object>();
+			if (vendorType < 1 || vendorType > 3) {
+				Merchant.API.Print("Please use a 1-3 to represent Vendor Type (1 = Food & Drink, 2 = Repair");
+				return result;
+			}
             // Frostfire Ridge (and caves and phases and Garrison)
             if (zoneID == 6720 || zoneID == 6868 || zoneID == 6745 || zoneID == 6849 || zoneID == 6861 || zoneID == 6864 || zoneID == 6848 || zoneID == 6875 || zoneID == 6939 || zoneID == 7005 || zoneID == 7209 || zoneID == 7004 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
                 IsSpecialPathingNeeded = true;
@@ -68,22 +75,41 @@ public class DreanorMerchants {
             }
 			     
         // No matches
-        List<object> result = new List<object>();
         return result;
     }
 	
 	// Return for all of these will be in the following format (XYZ = V3 coordinates):  List<object> zoneFlightInfo = {FPName,X,Y,Z,npcID,bool... FPName,X,Y,Z,npcID, ...)
     private static List<object> getWarspear(bool factionIsHorde)
     {
-        List<object> locations = new List<object>(){"Warspear, Ashran",5312.5f,-3980.3f,18.2f,86049,IsSpecialPathingNeeded};
-        
+        List<object> locations = new List<object>();
+		if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
         return locations;  
     }
 
     private static List<object> getAshran(bool factionIsHorde)
     {
-        List<object> locations = new List<object>(){"Warspear, Ashran",5312.5f,-3980.3f,18.2f,86049,IsSpecialPathingNeeded};
-        
+		List<object> locations = new List<object>();
+		if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//   
         return locations;
     }
 
@@ -91,42 +117,102 @@ public class DreanorMerchants {
 	private static List<object> getTanaan(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-        
+		if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
         return locations;
     }
 
     private static List<object> getSMV(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-		
+		if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//  
         return locations;
     }
 
     private static List<object> getNagrand(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-        
+        if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//  
         return locations;
     }
 
-    private static List<object> getHordeSpires(bool factionIsHorde)
+    private static List<object> getSpires(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-        
+        if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//  
         return locations;  
     }
 
     private static List<object> getTalador(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-                
+        if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//          
         return locations;
     }
 
     private static List<object> getGorgrond(bool factionIsHorde)
     {
         List<object> locations = new List<object>();
-        
+        if (factionIsHorde)
+		{
+			
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//  
         return locations;
     }
 	
@@ -135,11 +221,20 @@ public class DreanorMerchants {
     {
         int zoneID = Flight.API.Me.ZoneId;
         
+        // FROSTFIRE RIDGE ZONE SPECIAL PATHING!
+        //
+        if (Flight.API.IsInGarrison)
+        {
+            var check = new Fiber<int>(QH.GTownHallExit());
+            while (check.Run()){
+                yield return 100;
+            }
+        }       
+        
         // TALADOR ZONE SPECIAL PATHING!!!!!
         //
-        //
         // Each Special condition is labeled.
-        if (zoneID == 6662)
+        if (zoneID == 6662 || zoneID == 6980 || zoneID == 6979 || zoneID == 7089 || zoneID == 7622)
         {
             // To Navigate out of Gordal Fortress and safely get around the energy Barrier.
             // Initial logic is a positional check to see if player is inside the Fortress.
