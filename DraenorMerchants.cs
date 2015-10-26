@@ -29,49 +29,49 @@ public class DreanorMerchants {
             // Frostfire Ridge (and caves and phases and Garrison)
             if (zoneID == 6720 || zoneID == 6868 || zoneID == 6745 || zoneID == 6849 || zoneID == 6861 || zoneID == 6864 || zoneID == 6848 || zoneID == 6875 || zoneID == 6939 || zoneID == 7005 || zoneID == 7209 || zoneID == 7004 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
                 IsSpecialPathingNeeded = true;
-                return getFFR(factionIsHorde);
+                return getFFR(factionIsHorde,vendorType);
             }
 
             // Gorgrond (and caves and phases)
             if (zoneID == 6721 || zoneID == 6885 || zoneID == 7160 || zoneID == 7185) {
-                return getGorgrond(factionIsHorde);
+                return getGorgrond(factionIsHorde,vendorType);
             }
 
             // Talador (and caves and phases)
             if (zoneID == 6662 || zoneID == 6980 || zoneID == 6979 || zoneID == 7089 || zoneID == 7622) {
                 IsSpecialPathingNeeded = true;
-                return getTalador(factionIsHorde);
+                return getTalador(factionIsHorde,vendorType);
             }
 
             // Spires of Arak
             if (zoneID == 6722) {
-                return getSpires(factionIsHorde);
+                return getSpires(factionIsHorde,vendorType);
             }
 
             // Nagrand (and phased caves)
             if (zoneID == 6755 || zoneID == 7124 || zoneID == 7203 || zoneID == 7204 || zoneID == 7267) {
-                return getNagrand(factionIsHorde);
+                return getNagrand(factionIsHorde,vendorType);
             }
 
             // Shadowmoon Valley (and caves and phases)
             if (zoneID == 6719 || zoneID == 6976 || zoneID == 7460 || zoneID == 7083 || zoneID == 7078 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
-                return getSMV(factionIsHorde);
+                return getSMV(factionIsHorde,vendorType);
             }
 
             // Tanaan Jungle
             if (zoneID == 6723) {
-                return getTanaan(factionIsHorde);
+                return getTanaan(factionIsHorde,vendorType);
             }
 
             // Ashran (and mine)
             if (zoneID == 6941 || zoneID == 7548) {
                 IsSpecialPathingNeeded = true;
-                return getAshran(factionIsHorde);
+                return getAshran(factionIsHorde,vendorType);
             }
 
             // Warspear
             if (zoneID == 7333) {
-                return getWarspear(factionIsHorde);
+                return getWarspear(factionIsHorde,vendorType);
             }
 			     
         // No matches
@@ -79,11 +79,11 @@ public class DreanorMerchants {
     }
 	
 	// Return for all of these will be in the following format (XYZ = V3 coordinates):  List<object> zoneFlightInfo = {FPName,X,Y,Z,npcID,bool... FPName,X,Y,Z,npcID, ...)
-    private static List<object> getWarspear(bool factionIsHorde)
+    private static List<object> getWarspear(bool factionIsHorde, int vendorType)
     {
         List<object> locations = new List<object>();
-		if (factionIsHorde)
-		{
+		if (factionIsHorde) {
+			if 
 			
 		}
         else
@@ -96,12 +96,19 @@ public class DreanorMerchants {
         return locations;  
     }
 
-    private static List<object> getAshran(bool factionIsHorde)
+    private static List<object> getAshran(bool factionIsHorde, int vendorType)
     {
 		List<object> locations = new List<object>();
-		if (factionIsHorde)
-		{
-			
+		if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
 		}
         else
 		{
@@ -109,17 +116,162 @@ public class DreanorMerchants {
 		}
 		// Add Neutral locations
 		// All Here...
-		//   
-        return locations;
+		//
+        return locations; 
     }
 
 	
-	private static List<object> getTanaan(bool factionIsHorde)
+	private static List<object> getTanaan(bool factionIsHorde, int vendorType)
     {
         List<object> locations = new List<object>();
-		if (factionIsHorde)
+		if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
 		{
-			
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations; 
+    }
+
+    private static List<object> getSMV(bool factionIsHorde, int vendorType)
+    {
+        List<object> locations = new List<object>();
+		if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations; 
+    }
+
+    private static List<object> getNagrand(bool factionIsHorde, int vendorType)
+    {
+        if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations; 
+    }
+
+    private static List<object> getSpires(bool factionIsHorde, int vendorType)
+    {
+        if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations;   
+    }
+
+    private static List<object> getTalador(bool factionIsHorde, int vendorType)
+    {
+        if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations; 
+    }
+
+    private static List<object> getGorgrond(bool factionIsHorde, int vendorType)
+    {
+        if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
+		}
+        else
+		{
+			// Alliance locations
+		}
+		// Add Neutral locations
+		// All Here...
+		//
+        return locations; 
+    }
+	
+	private static List<object> getFFR(bool factionIsHorde, int vendorType) {
+		if (factionIsHorde) {
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
 		}
         else
 		{
@@ -129,92 +281,7 @@ public class DreanorMerchants {
 		// All Here...
 		//
         return locations;
-    }
-
-    private static List<object> getSMV(bool factionIsHorde)
-    {
-        List<object> locations = new List<object>();
-		if (factionIsHorde)
-		{
-			
-		}
-        else
-		{
-			// Alliance locations
-		}
-		// Add Neutral locations
-		// All Here...
-		//  
-        return locations;
-    }
-
-    private static List<object> getNagrand(bool factionIsHorde)
-    {
-        List<object> locations = new List<object>();
-        if (factionIsHorde)
-		{
-			
-		}
-        else
-		{
-			// Alliance locations
-		}
-		// Add Neutral locations
-		// All Here...
-		//  
-        return locations;
-    }
-
-    private static List<object> getSpires(bool factionIsHorde)
-    {
-        List<object> locations = new List<object>();
-        if (factionIsHorde)
-		{
-			
-		}
-        else
-		{
-			// Alliance locations
-		}
-		// Add Neutral locations
-		// All Here...
-		//  
-        return locations;  
-    }
-
-    private static List<object> getTalador(bool factionIsHorde)
-    {
-        List<object> locations = new List<object>();
-        if (factionIsHorde)
-		{
-			
-		}
-        else
-		{
-			// Alliance locations
-		}
-		// Add Neutral locations
-		// All Here...
-		//          
-        return locations;
-    }
-
-    private static List<object> getGorgrond(bool factionIsHorde)
-    {
-        List<object> locations = new List<object>();
-        if (factionIsHorde)
-		{
-			
-		}
-        else
-		{
-			// Alliance locations
-		}
-		// Add Neutral locations
-		// All Here...
-		//  
-        return locations;
-    }
+	}
 	
 	
     public static IEnumerable<int> doSpecialPathing()
@@ -384,3 +451,6 @@ public class DreanorMerchants {
 	
 	
 }
+
+
+// Create a method that returns BOTH vendor types
