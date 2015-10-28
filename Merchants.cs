@@ -12,7 +12,14 @@ public class Merchant
     public static Fiber<int> Fib;
     
 	public static List<int> FoodIDs;
+<<<<<<< HEAD
 	public static Lust<int> DrinkIDs;
+=======
+	public static List<int> DrinkIDs;
+	public static List<int[]> InventoryFood;
+	public static List<int[]> InventoryWater;
+	
+>>>>>>> origin/ModifyingTest
     // Default Constructor
     public Merchant() {}
 	
@@ -21,26 +28,19 @@ public class Merchant
 		string itemID;
 		string temp;
 		int ID;
-		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++)
-		{
+		List<int> allVendorFoodItems = new List<int>();
+		
+		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
 			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
 			ID = int.Parse(itemID);
 			foreach (int unit in foodIDs) {
 				if (unit == ID) {
-					int totalToBuy = MaxFoodToBuy();
-					int BuyTwenty = totalToBuy / 20;
-					int remainder = totalToBuy % 20;
-					// j = Multiples of 20
-					for (int j = 0; j < BuyTwenty; j++) {
-						QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
-						yield return 500;
-					}
-					QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
-					yield return 500;
+					allVendorFoodItems.Add(ID);
+					break;
 				}
-			}
+			}	
 		}
 	}
 	
@@ -115,6 +115,114 @@ public class Merchant
 		return result;		
 	}
 	
+	public static List<int[]> getFoodInInventory() {
+		List<int[]> owned = new List<int[]>();
+		var inventory = QH.API.Inventory.Items;
+		// I need to initialize the bags...
+		QH.API.Inventory.Refresh();
+		
+		int count = 0;
+		foreach (var item in inventory) {
+			for (int i = 0; i < FoodIDs.Count; i++) {
+				if (FoodIDs[i] == item.ItemId) {
+					int[] list = new int[2] {item.ItemId,item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		// Remove Duplicates, add total item count into one ID.
+		int count2;
+		int numInstances;
+		int id = 0;
+		List<int[]> copy = owned;
+		for (int i = 0; i < owned.Count; i++) {
+			count2 = 0;
+			numInstances = 0;
+			for (int j = 0; j < copy.Count; j++) {
+				if (copy[j][0] == owned[i][0]) {
+					count2 = count2 + copy[j][1];
+					numInstances++;
+					if (numInstances > 1 && numInstances < 3)
+					{
+						id = copy[j][0];
+					}
+				}
+			}
+			if (numInstances > 1) {
+				for (int j = owned.Count - 1; j >= 0; j--) {
+					if (numInstances > 1) {
+						if (owned[j][0] == id) {
+							owned.RemoveAt(j);
+							numInstances--;
+						}
+					}
+					else if (numInstances == 1){
+						if (owned[j][0] == id) {
+							owned[j][1] = count2;
+						}
+					}
+				}
+			}
+		}
+		return owned;
+	}
+	
+	
+	public static List<int[]> getDrinkInInventory() {
+		List<int[]> owned = new List<int[]>();
+		var inventory = QH.API.Inventory.Items;
+		// I need to initialize the bags...
+		QH.API.Inventory.Refresh();
+		
+		int count = 0;
+		foreach (var item in inventory) {
+			for (int i = 0; i < DrinkIDs.Count; i++) {
+				if (DrinkIDs[i] == item.ItemId) {
+					int[] list = new int[2] {item.ItemId,item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		// Remove Duplicates, add total item count into one ID.
+		int count2;
+		int numInstances;
+		int id = 0;
+		List<int[]> copy = owned;
+		for (int i = 0; i < owned.Count; i++) {
+			count2 = 0;
+			numInstances = 0;
+			for (int j = 0; j < copy.Count; j++) {
+				if (copy[j][0] == owned[i][0]) {
+					count2 = count2 + copy[j][1];
+					numInstances++;
+					if (numInstances > 1 && numInstances < 3)
+					{
+						id = copy[j][0];
+					}
+				}
+			}
+			if (numInstances > 1) {
+				for (int j = owned.Count - 1; j >= 0; j--) {
+					if (numInstances > 1) {
+						if (owned[j][0] == id) {
+							owned.RemoveAt(j);
+							numInstances--;
+						}
+					}
+					else if (numInstances == 1){
+						if (owned[j][0] == id) {
+							owned[j][1] = count2;
+						}
+					}
+				}
+			}
+		}
+		return owned;
+	}
+	
+	
 	public static List<object> getVendorInfo(int TypeofMerchant) {
 		List<object> vendor = new List<object>();
         int continentID = QH.API.Me.ContinentID;
@@ -150,10 +258,14 @@ public class Merchant
 		return QH.API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
 	}
 	
+<<<<<<< HEAD
 	public static bool IsFoodOrDrinkNeeded() {
 		// 2D array structure, First value of each List of Lists will be food ID and amount owned
 		// If player owns none, value defaults to zero.  This creates a check on what a player owns.
 		List<List<int>> owned = new List<List<int>>();
+=======
+	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
+>>>>>>> origin/ModifyingTest
 		
 		if (QH.API.Me.ContinentID == 1116) {
 			FoodIDs = DraenorMerchants.getFood();
@@ -161,6 +273,7 @@ public class Merchant
 		}
 		
 		// else if() To be added for other continents.
+<<<<<<< HEAD
 		// Now, finding all items in my bags that much these known items to use, and counting how many in possession.
 		foreach (int item in Inventory.items) {
 			foreach (int foodItemID in FoodIDs) {
@@ -174,6 +287,36 @@ public class Merchant
 		
 		QH.API.Print("Player Needs to Purchase Some Resting Refreshments!")
 		return true;
+=======
+		
+		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
+		InventoryFood = getFoodInInventory();
+		int highestAmount = 0;
+		foreach(int[] foodAmount in InventoryFood) {
+			if (highestAmount < foodAmount[1]){
+				highestAmount = foodAmount[1];
+			}
+		}
+		
+		if (highestAmount < numMinimumFood) {
+			QH.API.Print("Player is Low on Food! Heading to Restock!!!");
+			return true;
+		}
+		else {
+			InventoryWater = getDrinkInInventory();
+			int highestAmountWater = 0;
+			foreach(int[] drinkAmount in InventoryWater) {
+				if (highestAmountWater < drinkAmount[1]) {
+					highestAmountWater = drinkAmount[1];
+				}
+			}
+			if (highestAmountWater < numMinimumWater) {
+				QH.API.Print("Player is Low on Water! Head to Restock!!!");
+				return true;
+			}
+		}
+		return false;
+>>>>>>> origin/ModifyingTest
 	}
 	
 	public static bool IsRepairNeeded() {
@@ -182,15 +325,24 @@ public class Merchant
 	}
 	
 	public static int MaxDrinkToBuy(int max) {
-		int total = 0;
+		int amount = 0;
+		foreach (int[] drink in InventoryWater) {
+			if (amount < drink[1]) {
+				amount = drink[1];
+			}
+		}
+		int total = max - amount;
 		return total;
 	}
 	
 	public static int MaxFoodToBuy(int max) {
-		for (int i = 0; i < GlobalBotSettings.FoodItemIds.Count; i++) {
-			GlobalBotSettings.FoodItemIds.RemoveAt(0);
+		int amount = 0;
+		foreach (int[] food in InventoryFood) {
+			if (amount < food[1]) {
+				amount = food[1];
+			}
 		}
-		int total = 0;
+		int total = max - amount;
 		return total;
 	}
 	
@@ -317,5 +469,37 @@ public class Merchant
 		yield break;
 	}
 	
+	public static void setUsableFood() {
+		InventoryFood = getFoodInInventory();
+		for (int i = 0; i < InventoryFood.Count; i++) {
+			QH.API.GlobalBotSettings.FoodItemIds.Add(InventoryFood[i][0]);
+		}
+	}
 	
+	public static void setUsableWater() {
+		InventoryWater = getDrinkInInventory();
+		for (int i = 0; i < InventoryWater.Count; i++) {
+			QH.API.GlobalBotSettings.DrinkItemIds.Add(InventoryFood[i][0]);
+		}
+	}
+	
+	
+//  for (int i = 0; i < GlobalBotSettings.FoodItemIds.Count; i++) {
+//  	GlobalBotSettings.FoodItemIds.RemoveAt(0);
+//  }
+
+// Currently the BUY methods would be all available items on the vendor.
+	
+	//  int totalToBuy = MaxFoodToBuy();
+	//  				int BuyTwenty = totalToBuy / 20;
+	//  				int remainder = totalToBuy % 20;
+	//  				// j = Multiples of 20
+	//  				for (int j = 0; j < BuyTwenty; j++) {
+	//  					QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
+	//  					yield return 500;
+	//  				}
+	//  				QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+	//  				yield return 500;
+	//  			}
+	//  		}
 }
