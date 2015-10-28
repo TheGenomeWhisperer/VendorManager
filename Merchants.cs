@@ -11,8 +11,8 @@ public class Merchant
 {
     public static Fiber<int> Fib;
     
-	public static List<int> FoodIDs = new List<int>();
-	public static Lust<int> DrinkIDs = new List<int>();
+	public static List<int> FoodIDs;
+	public static Lust<int> DrinkIDs;
     // Default Constructor
     public Merchant() {}
 	
@@ -79,7 +79,7 @@ public class Merchant
 		// Obtaining the List with the NPC info and location.
 		vendor = getVendorInfo(TypeofMerchant);
 		
-		if (vendor.Count > 2) {
+		if (vendor.Count == 0) {
 			float closestDistance;
 			float tempDistance;
 			int npcID;
@@ -109,7 +109,7 @@ public class Merchant
 				}
 			}
 			 // Creating list with the Vector3 position of closest Merchant, and food list and water list on the end.
-            List<object> final = new List<object>(){closestVector3,closestDistance,npcID,IsSpecialPathingNeeded,vendor[vendor.Count - 2],vendor[vendor.Count - 1]};
+            List<object> final = new List<object>(){closestVector3,closestDistance,npcID,IsSpecialPathingNeeded};
             result.AddRange(final);
 		}
 		return result;		
@@ -151,6 +151,27 @@ public class Merchant
 	}
 	
 	public static bool IsFoodOrDrinkNeeded() {
+		// 2D array structure, First value of each List of Lists will be food ID and amount owned
+		// If player owns none, value defaults to zero.  This creates a check on what a player owns.
+		List<List<int>> owned = new List<List<int>>();
+		
+		if (QH.API.Me.ContinentID == 1116) {
+			FoodIDs = DraenorMerchants.getFood();
+			DrinkIDs = DraenorMerchants.getWater();
+		}
+		
+		// else if() To be added for other continents.
+		// Now, finding all items in my bags that much these known items to use, and counting how many in possession.
+		foreach (int item in Inventory.items) {
+			foreach (int foodItemID in FoodIDs) {
+				if (foodItemID == item.ItemID) {
+					List<int> list = new List<int>() {item.ID, item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		
 		QH.API.Print("Player Needs to Purchase Some Resting Refreshments!")
 		return true;
 	}
@@ -212,13 +233,6 @@ public class Merchant
         distance = (int)Math.Ceiling(distance);
         int npcID = (int) result[2];
         bool IsSpecialPathingNeeded = (bool) result[3];
-		// Casting the object to a List ( a little wonky)
-		object food = result[4];
-		object drink = result[5];
-		IEnumberable f = food as IEnumberable;
-		IEnumberable d = drink as IEnumberable;
-		FoodIDs = f.Cast<object>().ToList();
-		DrinkIDs = d.Cast<object>().ToList();
 		
         string yards = "Yards";
         // String from plural to non. QoL thing only...
@@ -236,7 +250,7 @@ public class Merchant
                 }
             }
             
-            // Add connections to other Classes There...
+            // Add connections to other Classes for other continents here...
             //  else if (API.Me.ContinentID == 1) {
             //	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
 			//	while(check.Run()) 

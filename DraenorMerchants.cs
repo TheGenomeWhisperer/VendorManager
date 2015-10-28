@@ -93,8 +93,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations;  
     }
 
@@ -119,8 +117,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 
@@ -146,8 +142,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 
@@ -172,8 +166,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 
@@ -222,8 +214,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations;   
     }
 
@@ -247,8 +237,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 
@@ -272,8 +260,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 	
@@ -303,8 +289,6 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations;
 	}
     
