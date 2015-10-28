@@ -10,62 +10,70 @@
 public class Merchant
 {
     public static Fiber<int> Fib;
-    
 	public static List<int> FoodIDs;
 	public static List<int> DrinkIDs;
 	public static List<int[]> InventoryFood;
 	public static List<int[]> InventoryWater;
+	public static int FoodIDToBuy;
+	public static int DrinkIDToBuy;
 	
     // Default Constructor
     public Merchant() {}
 	
 	// Method:		"BuyFood()"
-	public static IEnumberable<int> BuyFood(List<int> foodIDs) {
+	public static IEnumberable<int> BuyFood() {
+		int totalToBuy = MaxFoodToBuy();
+		int BuyTwenty = totalToBuy / 20;
+		int remainder = totalToBuy % 20;
+		// parsing through vendor
 		string itemID;
 		string temp;
 		int ID;
-		List<int> allVendorFoodItems = new List<int>();
-		
 		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
 			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
 			ID = int.Parse(itemID);
-			foreach (int unit in foodIDs) {
-				if (unit == ID) {
-					allVendorFoodItems.Add(ID);
-					break;
+			if (FoodIDToBuy == ID) {
+				// i = Multiples of 20
+				for (int i = 0; i < BuyTwenty; i++) {
+					QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
+					yield return 500;
 				}
-			}	
+				QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+				yield return 500;
+				yield break;
+			}
 		}
+		yield break;
 	}
 	
 	// Method:		"BuyDrink()"
-	public static IEnumberable<int> BuyDrink(List<int> drinkIDs) {
+	public static IEnumberable<int> BuyDrink() {
+		int totalToBuy = MaxDrinkToBuy();
+		int BuyTwenty = totalToBuy / 20;
+		int remainder = totalToBuy % 20;
+		// parsing through vendor
 		string itemID;
 		string temp;
 		int ID;
-		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++)
-		{
+		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
 			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
 			ID = int.Parse(itemID);
-			foreach (int unit in drinkIDs) {
-				if (unit == ID) {
-					int totalToBuy = MaxDrinkToBuy();
-					int BuyTwenty = totalToBuy / 20;
-					int remainder = totalToBuy % 20;
-					// j = Multiples of 20
-					for (int j = 0; j < BuyTwenty; j++) {
-						QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
-						yield return 500;
-					}
-					QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+			if (DrinkIDToBuy == ID) {
+				// i = Multiples of 20
+				for (int i = 0; i < BuyTwenty; i++) {
+					QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
 					yield return 500;
 				}
+				QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+				yield return 500;
+				yield break;
 			}
 		}
+		yield break;
 	}
 	
 	public static List<object> GetClosestMerchant(int TypeofMerchant) {
@@ -298,24 +306,78 @@ public class Merchant
 	}
 	
 	public static int MaxDrinkToBuy(int max) {
-		int amount = 0;
-		foreach (int[] drink in InventoryWater) {
-			if (amount < drink[1]) {
-				amount = drink[1];
+		List<int[]> allVendorDrinkItems = new List<int>();
+		int total;
+		
+		// Parse through vendor items, collect all items that match item in bags.
+		string itemID;
+		string temp;
+		int ID;
+		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
+			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
+			temp = itemID.Substring(itemID.IndexOf(':') + 1);
+			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
+			ID = int.Parse(itemID);
+			foreach (int[] unit in InventoryWater) {
+				if (unit[0] == ID) {
+					allVendorDrinkItems.Add(unit);
+					break;
+				}
 			}
 		}
-		int total = max - amount;
+		// If at least 1 match
+		if (allVendorDrinkItems.Count > 0) {
+			int highest = 0;
+			foreach (int[] item in allVendorDrinkItems) {
+				if (highest < item[1]) {
+					DrinkIDToBuy = item[0];
+					highest = item[1];
+				}
+			}
+			total = max - highest;
+		}
+		else {
+			total = 100;
+		}
 		return total;
 	}
 	
 	public static int MaxFoodToBuy(int max) {
-		int amount = 0;
-		foreach (int[] food in InventoryFood) {
-			if (amount < food[1]) {
-				amount = food[1];
+		
+		List<int[]> allVendorFoodItems = new List<int>();
+		int total;
+		
+		// Parse through vendor items, collect all items that match item in bags.
+		string itemID;
+		string temp;
+		int ID;
+		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
+			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
+			temp = itemID.Substring(itemID.IndexOf(':') + 1);
+			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
+			ID = int.Parse(itemID);
+			foreach (int[] unit in InventoryFood) {
+				if (unit[0] == ID) {
+					allVendorFoodItems.Add(unit);
+					break;
+				}
 			}
 		}
-		int total = max - amount;
+		// If at least 1 match
+		if (allVendorFoodItems.Count > 0) {
+			int highest = 0;
+			foreach (int[] item in allVendorFoodItems) {
+				if (highest < item[1]) {
+					FoodIDToBuy = item[0];
+					highest = item[1];
+				}
+			}
+			total = max - highest;
+		}
+		else {
+			total = 100;
+			FoodIDToBuy = allVendorFoodItems[0][0];
+		}
 		return total;
 	}
 	
@@ -323,14 +385,14 @@ public class Merchant
 		// Initializing Function
         string title = "title0";
         string luaCall = ("local title0,_ = GetGossipOptions(); if title0 ~= nil then return title0 else return \"nil\" end");
-        string result = API.ExecuteLua<string>(luaCall);
+        string result = QH.API.ExecuteLua<string>(luaCall);
         // Now Ready to Iterate through All Gossip Options!
         // The reason "1" is used instead of the conventional "0" is because Gossip options start at 1.
         int i = 1;
         string num = "";
         while (result != null) {
             if (result.Equals("Let me browse your goods.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Fammi vedere la tua merce.") || result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("물건을 살펴보고 싶습니다.") || result.Equals(" 讓我看看你出售的貨物。") || result.Equals("让我看看你出售的货物。")) {
-                API.ExecuteLua("SelectGossipOption(" + i + ");");
+                QH.API.ExecuteLua("SelectGossipOption(" + i + ");");
                 break;
             }
             else {
@@ -338,7 +400,7 @@ public class Merchant
                 num = i.ToString();
                 title = (title.Substring(0,title.Length-1) + num);
                 luaCall = ("local " + title + ",_," + luaCall.Substring(6,luaCall.Length-6));
-                result = API.ExecuteLua<string>(luaCall);
+                result = QH.API.ExecuteLua<string>(luaCall);
                 i++;
             }
         }
@@ -424,20 +486,21 @@ public class Merchant
 			InteractWithMerchant();
 			// Buy Water if Needed
 			if (QH.Me.Class.Equals("Paladin") || QH.Me.Class.Equals("Priest") || QH.Me.Class.Equals("Shaman") || QH.Me.Class.Equals("Mage") || QH.Me.Class.Equals("Warlock") || QH.Me.Class.Equals("Druid") || QH.Me.Class.Equals("Monk")) {
-            	var check = new Fiber<int>(BuyDrink(DrinkIDs));
+            	var check = new Fiber<int>(BuyDrink());
 				while (check.Run()) {
 					yield return 100;
 				}
         	}
 			// Buying food
-			var check2 = new Fiber<int>(BuyFood(FoodIDs));
+			var check2 = new Fiber<int>(BuyFood());
 			while (check2.Run()) {
 				yield return 100;
 			}
-			
-			
-			
-			
+			// Updating Food and Water Lists
+			setUsableFood();
+			setUsableWater();
+			QH.API.Print("Refreshments Replenished! Back to Work!!!");
+			QH.API.ExecuteLua("CloseMerchant()");
 		}
 		yield break;
 	}
@@ -455,24 +518,4 @@ public class Merchant
 			QH.API.GlobalBotSettings.DrinkItemIds.Add(InventoryFood[i][0]);
 		}
 	}
-	
-	
-//  for (int i = 0; i < GlobalBotSettings.FoodItemIds.Count; i++) {
-//  	GlobalBotSettings.FoodItemIds.RemoveAt(0);
-//  }
-
-// Currently the BUY methods would be all available items on the vendor.
-	
-	//  int totalToBuy = MaxFoodToBuy();
-	//  				int BuyTwenty = totalToBuy / 20;
-	//  				int remainder = totalToBuy % 20;
-	//  				// j = Multiples of 20
-	//  				for (int j = 0; j < BuyTwenty; j++) {
-	//  					QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
-	//  					yield return 500;
-	//  				}
-	//  				QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
-	//  				yield return 500;
-	//  			}
-	//  		}
 }
