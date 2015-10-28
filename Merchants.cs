@@ -24,26 +24,19 @@ public class Merchant
 		string itemID;
 		string temp;
 		int ID;
-		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++)
-		{
+		List<int> allVendorFoodItems = new List<int>();
+		
+		for (int i = 1; i < QH.API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = QH.API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
 			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
 			ID = int.Parse(itemID);
 			foreach (int unit in foodIDs) {
 				if (unit == ID) {
-					int totalToBuy = MaxFoodToBuy();
-					int BuyTwenty = totalToBuy / 20;
-					int remainder = totalToBuy % 20;
-					// j = Multiples of 20
-					for (int j = 0; j < BuyTwenty; j++) {
-						QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
-						yield return 500;
-					}
-					QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
-					yield return 500;
+					allVendorFoodItems.Add(ID);
+					break;
 				}
-			}
+			}	
 		}
 	}
 	
@@ -470,4 +463,16 @@ public class Merchant
 
 // Currently the BUY methods would be all available items on the vendor.
 	
+	//  int totalToBuy = MaxFoodToBuy();
+	//  				int BuyTwenty = totalToBuy / 20;
+	//  				int remainder = totalToBuy % 20;
+	//  				// j = Multiples of 20
+	//  				for (int j = 0; j < BuyTwenty; j++) {
+	//  					QH.API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
+	//  					yield return 500;
+	//  				}
+	//  				QH.API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+	//  				yield return 500;
+	//  			}
+	//  		}
 }
