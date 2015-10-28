@@ -11,8 +11,11 @@ public class Merchant
 {
     public static Fiber<int> Fib;
     
-	public static List<int> FoodIDs = new List<int>();
-	public static Lust<int> DrinkIDs = new List<int>();
+	public static List<int> FoodIDs;
+	public static List<int> DrinkIDs;
+	public static List<int[]> InventoryFood;
+	public static List<int[]> InventoryWater;
+	
     // Default Constructor
     public Merchant() {}
 	
@@ -79,7 +82,7 @@ public class Merchant
 		// Obtaining the List with the NPC info and location.
 		vendor = getVendorInfo(TypeofMerchant);
 		
-		if (vendor.Count > 2) {
+		if (vendor.Count == 0) {
 			float closestDistance;
 			float tempDistance;
 			int npcID;
@@ -109,11 +112,119 @@ public class Merchant
 				}
 			}
 			 // Creating list with the Vector3 position of closest Merchant, and food list and water list on the end.
-            List<object> final = new List<object>(){closestVector3,closestDistance,npcID,IsSpecialPathingNeeded,vendor[vendor.Count - 2],vendor[vendor.Count - 1]};
+            List<object> final = new List<object>(){closestVector3,closestDistance,npcID,IsSpecialPathingNeeded};
             result.AddRange(final);
 		}
 		return result;		
 	}
+	
+	public static List<int[]> getFoodInInventory() {
+		List<int[]> owned = new List<int[]>();
+		var inventory = QH.API.Inventory.Items;
+		// I need to initialize the bags...
+		QH.API.Inventory.Refresh();
+		
+		int count = 0;
+		foreach (var item in inventory) {
+			for (int i = 0; i < FoodIDs.Count; i++) {
+				if (FoodIDs[i] == item.ItemId) {
+					int[] list = new int[2] {item.ItemId,item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		// Remove Duplicates, add total item count into one ID.
+		int count2;
+		int numInstances;
+		int id = 0;
+		List<int[]> copy = owned;
+		for (int i = 0; i < owned.Count; i++) {
+			count2 = 0;
+			numInstances = 0;
+			for (int j = 0; j < copy.Count; j++) {
+				if (copy[j][0] == owned[i][0]) {
+					count2 = count2 + copy[j][1];
+					numInstances++;
+					if (numInstances > 1 && numInstances < 3)
+					{
+						id = copy[j][0];
+					}
+				}
+			}
+			if (numInstances > 1) {
+				for (int j = owned.Count - 1; j >= 0; j--) {
+					if (numInstances > 1) {
+						if (owned[j][0] == id) {
+							owned.RemoveAt(j);
+							numInstances--;
+						}
+					}
+					else if (numInstances == 1){
+						if (owned[j][0] == id) {
+							owned[j][1] = count2;
+						}
+					}
+				}
+			}
+		}
+		return owned;
+	}
+	
+	
+	public static List<int[]> getDrinkInInventory() {
+		List<int[]> owned = new List<int[]>();
+		var inventory = QH.API.Inventory.Items;
+		// I need to initialize the bags...
+		QH.API.Inventory.Refresh();
+		
+		int count = 0;
+		foreach (var item in inventory) {
+			for (int i = 0; i < DrinkIDs.Count; i++) {
+				if (DrinkIDs[i] == item.ItemId) {
+					int[] list = new int[2] {item.ItemId,item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		// Remove Duplicates, add total item count into one ID.
+		int count2;
+		int numInstances;
+		int id = 0;
+		List<int[]> copy = owned;
+		for (int i = 0; i < owned.Count; i++) {
+			count2 = 0;
+			numInstances = 0;
+			for (int j = 0; j < copy.Count; j++) {
+				if (copy[j][0] == owned[i][0]) {
+					count2 = count2 + copy[j][1];
+					numInstances++;
+					if (numInstances > 1 && numInstances < 3)
+					{
+						id = copy[j][0];
+					}
+				}
+			}
+			if (numInstances > 1) {
+				for (int j = owned.Count - 1; j >= 0; j--) {
+					if (numInstances > 1) {
+						if (owned[j][0] == id) {
+							owned.RemoveAt(j);
+							numInstances--;
+						}
+					}
+					else if (numInstances == 1){
+						if (owned[j][0] == id) {
+							owned[j][1] = count2;
+						}
+					}
+				}
+			}
+		}
+		return owned;
+	}
+	
 	
 	public static List<object> getVendorInfo(int TypeofMerchant) {
 		List<object> vendor = new List<object>();
@@ -150,9 +261,42 @@ public class Merchant
 		return QH.API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
 	}
 	
-	public static bool IsFoodOrDrinkNeeded() {
-		QH.API.Print("Player Needs to Purchase Some Resting Refreshments!")
-		return true;
+	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
+		
+		if (QH.API.Me.ContinentID == 1116) {
+			FoodIDs = DraenorMerchants.getFood();
+			DrinkIDs = DraenorMerchants.getWater();
+		}
+		
+		// else if() To be added for other continents.
+		
+		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
+		InventoryFood = getFoodInInventory();
+		int highestAmount = 0;
+		foreach(int[] foodAmount in InventoryFood) {
+			if (highestAmount < foodAmount[1]){
+				highestAmount = foodAmount[1];
+			}
+		}
+		
+		if (highestAmount < numMinimumFood) {
+			QH.API.Print("Player is Low on Food! Heading to Restock!!!");
+			return true;
+		}
+		else {
+			InventoryWater = getDrinkInInventory();
+			int highestAmountWater = 0;
+			foreach(int[] drinkAmount in InventoryWater) {
+				if (highestAmountWater < drinkAmount[1]) {
+					highestAmountWater = drinkAmount[1];
+				}
+			}
+			if (highestAmountWater < numMinimumWater) {
+				QH.API.Print("Player is Low on Water! Head to Restock!!!");
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public static bool IsRepairNeeded() {
@@ -161,15 +305,24 @@ public class Merchant
 	}
 	
 	public static int MaxDrinkToBuy(int max) {
-		int total = 0;
+		int amount = 0;
+		foreach (int[] drink in InventoryWater) {
+			if (amount < drink[1]) {
+				amount = drink[1];
+			}
+		}
+		int total = max - amount;
 		return total;
 	}
 	
 	public static int MaxFoodToBuy(int max) {
-		for (int i = 0; i < GlobalBotSettings.FoodItemIds.Count; i++) {
-			GlobalBotSettings.FoodItemIds.RemoveAt(0);
+		int amount = 0;
+		foreach (int[] food in InventoryFood) {
+			if (amount < food[1]) {
+				amount = food[1];
+			}
 		}
-		int total = 0;
+		int total = max - amount;
 		return total;
 	}
 	
@@ -212,13 +365,6 @@ public class Merchant
         distance = (int)Math.Ceiling(distance);
         int npcID = (int) result[2];
         bool IsSpecialPathingNeeded = (bool) result[3];
-		// Casting the object to a List ( a little wonky)
-		object food = result[4];
-		object drink = result[5];
-		IEnumberable f = food as IEnumberable;
-		IEnumberable d = drink as IEnumberable;
-		FoodIDs = f.Cast<object>().ToList();
-		DrinkIDs = d.Cast<object>().ToList();
 		
         string yards = "Yards";
         // String from plural to non. QoL thing only...
@@ -236,7 +382,7 @@ public class Merchant
                 }
             }
             
-            // Add connections to other Classes There...
+            // Add connections to other Classes for other continents here...
             //  else if (API.Me.ContinentID == 1) {
             //	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
 			//	while(check.Run()) 
@@ -303,5 +449,25 @@ public class Merchant
 		yield break;
 	}
 	
+	public static void setUsableFood() {
+		InventoryFood = getFoodInInventory();
+		for (int i = 0; i < InventoryFood.Count; i++) {
+			QH.API.GlobalBotSettings.FoodItemIds.Add(InventoryFood[i][0]);
+		}
+	}
+	
+	public static void setUsableWater() {
+		InventoryWater = getDrinkInInventory();
+		for (int i = 0; i < InventoryWater.Count; i++) {
+			QH.API.GlobalBotSettings.DrinkItemIds.Add(InventoryFood[i][0]);
+		}
+	}
+	
+	
+//  for (int i = 0; i < GlobalBotSettings.FoodItemIds.Count; i++) {
+//  	GlobalBotSettings.FoodItemIds.RemoveAt(0);
+//  }
+
+// Currently the BUY methods would be all available items on the vendor.
 	
 }
