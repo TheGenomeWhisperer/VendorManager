@@ -281,6 +281,8 @@ public class DreanorMerchants {
 			else if(vendorType == 2) {
 				
 			}
+            
+            // Both
 		}
         else
 		{
