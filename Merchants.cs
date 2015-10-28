@@ -12,10 +12,14 @@ public class Merchant
     public static Fiber<int> Fib;
     
 	public static List<int> FoodIDs;
+<<<<<<< HEAD
+	public static Lust<int> DrinkIDs;
+=======
 	public static List<int> DrinkIDs;
 	public static List<int[]> InventoryFood;
 	public static List<int[]> InventoryWater;
 	
+>>>>>>> origin/ModifyingTest
     // Default Constructor
     public Merchant() {}
 	
@@ -254,7 +258,14 @@ public class Merchant
 		return QH.API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
 	}
 	
+<<<<<<< HEAD
+	public static bool IsFoodOrDrinkNeeded() {
+		// 2D array structure, First value of each List of Lists will be food ID and amount owned
+		// If player owns none, value defaults to zero.  This creates a check on what a player owns.
+		List<List<int>> owned = new List<List<int>>();
+=======
 	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
+>>>>>>> origin/ModifyingTest
 		
 		if (QH.API.Me.ContinentID == 1116) {
 			FoodIDs = DraenorMerchants.getFood();
@@ -262,6 +273,21 @@ public class Merchant
 		}
 		
 		// else if() To be added for other continents.
+<<<<<<< HEAD
+		// Now, finding all items in my bags that much these known items to use, and counting how many in possession.
+		foreach (int item in Inventory.items) {
+			foreach (int foodItemID in FoodIDs) {
+				if (foodItemID == item.ItemID) {
+					List<int> list = new List<int>() {item.ID, item.StackCount};
+					owned.Add(list);
+					break;
+				}
+			}
+		}
+		
+		QH.API.Print("Player Needs to Purchase Some Resting Refreshments!")
+		return true;
+=======
 		
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
 		InventoryFood = getFoodInInventory();
@@ -290,6 +316,7 @@ public class Merchant
 			}
 		}
 		return false;
+>>>>>>> origin/ModifyingTest
 	}
 	
 	public static bool IsRepairNeeded() {
