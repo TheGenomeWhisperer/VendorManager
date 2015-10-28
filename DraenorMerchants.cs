@@ -7,13 +7,13 @@
 |   Last Update 25th Oct, 2015 */
 
 
-public class DreanorMerchants {
+public class DraenorMerchants {
 	
-	public static Fiber<int> Fib;
+	public static Fiber<int> Fib; 
     public static bool IsSpecialPathingNeeded;
 	
 	// Default Constructor()
-	public DreanorMerchants() {}
+	public DraenorMerchants() {}
 	
 	// Method:		"getMerchantInfo(int,bool,int)
 	// 				vendorType represented by numbers 1-3
@@ -23,12 +23,10 @@ public class DreanorMerchants {
 			// Default list in case of no result
 			List<object> result = new List<object>();
 			if (vendorType < 1 || vendorType > 3) {
-				Merchant.API.Print("Please use a 1-3 to represent Vendor Type (1 = Food & Drink, 2 = Repair");
-				return result;
+				vendorType = 1;
 			}
             // Frostfire Ridge (and caves and phases and Garrison)
             if (zoneID == 6720 || zoneID == 6868 || zoneID == 6745 || zoneID == 6849 || zoneID == 6861 || zoneID == 6864 || zoneID == 6848 || zoneID == 6875 || zoneID == 6939 || zoneID == 7005 || zoneID == 7209 || zoneID == 7004 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
-                IsSpecialPathingNeeded = true;
                 return getFFR(factionIsHorde,vendorType);
             }
 
@@ -83,8 +81,15 @@ public class DreanorMerchants {
     {
         List<object> locations = new List<object>();
 		if (factionIsHorde) {
-			if 
-			
+			// Food & Drink
+			if (vendorType == 1) {
+				List<object> list0 = new List<object>(){};
+				locations.AddRange(list0);
+			}
+			// Repair
+			else if(vendorType == 2) {
+				
+			}
 		}
         else
 		{
@@ -171,6 +176,7 @@ public class DreanorMerchants {
 
     private static List<object> getNagrand(bool factionIsHorde, int vendorType)
     {
+        List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -189,13 +195,12 @@ public class DreanorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
-        locations.Add(getFood());
-        locations.Add(getDrink());
         return locations; 
     }
 
     private static List<object> getSpires(bool factionIsHorde, int vendorType)
     {
+        List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -219,6 +224,7 @@ public class DreanorMerchants {
 
     private static List<object> getTalador(bool factionIsHorde, int vendorType)
     {
+        List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -242,6 +248,7 @@ public class DreanorMerchants {
 
     private static List<object> getGorgrond(bool factionIsHorde, int vendorType)
     {
+        List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -264,6 +271,7 @@ public class DreanorMerchants {
     }
 	
 	private static List<object> getFFR(bool factionIsHorde, int vendorType) {
+        List<object> locations = new List<object>();
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -295,31 +303,21 @@ public class DreanorMerchants {
 	}
     
     public static List<int> getFood() {
-        List<int> allFood = new List<int>();
+        List<int> allFood = new List<int>() {115351,115352,115353,115354,115355};
         // Food IDs
         
         return allFood;
     }
     
     public static List<int> getWater() {
-        List<int> allDrinks = new List<int>();
+        List<int> allDrinks = new List<int>() {117452};
         
         return allDrinks;
     }
 	
 	
     public static IEnumerable<int> doSpecialPathing() {
-        int zoneID = QH.API.Me.ZoneId;
-        
-        // FROSTFIRE RIDGE ZONE SPECIAL PATHING!
-        //
-        if (QH.API.IsInGarrison)
-        {
-            var check = new Fiber<int>(QH.GTownHallExit());
-            while (check.Run()){
-                yield return 100;
-            }
-        }       
+        int zoneID = QH.API.Me.ZoneId; 
         
         // TALADOR ZONE SPECIAL PATHING!!!!!
         //
