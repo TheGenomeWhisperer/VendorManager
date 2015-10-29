@@ -11,18 +11,24 @@ public class Merchant
 {
 	public static ReBotAPI API;
     public static Fiber<int> Fib;
+	// List of all potential food/drink items good for
 	public static List<int> DrinkIDs;
 	public static List<int> FoodIDs;
+	// List of all food items and drink items on the given vendor.
+	public static List<int> vendorDrinks;
+	public static List<int> vendorFood;
+	// List of Arrays, containing in position 0, item ID Number; position 1, quantity owned in bags.
 	public static List<int[]> InventoryFood;
 	public static List<int[]> InventoryWater;
+	// Eventual ID of the food/water player will purchase from the vendor.
 	public static int FoodIDToBuy;
 	public static int DrinkIDToBuy;
 	// Max amount of food/water to hold, easily adjustable
-	public static int FoodCap = 100;
-	public static int DrinkCap = 50;
-	// Min amount of food/water to hold
-	public static int MinFood = 5;
-	public static int MinWater = 5;
+	public static int FoodCap = 36;
+	public static int DrinkCap = 36;
+	// Min amount of food/water to possess before activating vendor logic again.
+	public static int MinFood = 25;
+	public static int MinWater = 25;
 	
     // Default Constructor
     public Merchant() {}
@@ -133,19 +139,8 @@ public class Merchant
 		return owned;
 	}
 	
-	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
-		//default
-		FoodIDs = new List<int>();
-		DrinkIDs = new List<int>();
-		if (API.Me.ContinentID == 1116) {
-			FoodIDs = DraenorMerchants.getFood();
-			DrinkIDs = DraenorMerchants.getWater();
-		}
-		
-		// else if() To be added for other continents.
-		
+	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
-		InventoryFood = getFoodInInventory();
 		int highestAmount = 0;
 		foreach(int[] foodAmount in InventoryFood) {
 			if (highestAmount < foodAmount[1]){
@@ -158,7 +153,6 @@ public class Merchant
 			return true;
 		}
 		else {
-			InventoryWater = getDrinkInInventory();
 			int highestAmountWater = 0;
 			foreach(int[] drinkAmount in InventoryWater) {
 				if (highestAmountWater < drinkAmount[1]) {
@@ -187,6 +181,58 @@ public class Merchant
         
         // All Continents Eventually to be Added
         return vendor;
+	}
+	
+	public static List<int> getMerchantFoodList() {
+		List<int> items = new List<int>();
+		if (IsVendorOpen()) {
+			string itemID;
+			string temp;
+			int ID;
+			for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
+				itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
+				temp = itemID.Substring(itemID.IndexOf(':') + 1);
+				itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
+				ID = int.Parse(itemID);
+				foreach (int foodItem in FoodIDs) {
+					if (ID == foodItem) {
+						items.Add(ID);
+						break;
+					}
+				}
+			}
+		}
+		else {
+			API.Print("Error, Merchant Window Not Open.  Failure to Collect Merchant Trade info.");
+			items.Add(0);
+		}
+		return items;
+	}
+	
+	public static List<int> getMerchantDrinkList() {
+		List<int> items = new List<int>();
+		if (IsVendorOpen()) {
+			string itemID;
+			string temp;
+			int ID;
+			for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
+				itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
+				temp = itemID.Substring(itemID.IndexOf(':') + 1);
+				itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
+				ID = int.Parse(itemID);
+				foreach (int drinkItem in DrinkIDs) {
+					if (ID == drinkItem) {
+						items.Add(ID);
+						break;
+					}
+				}
+			}
+		}
+		else {
+			API.Print("Error, Merchant Window Not Open.  Failure to Collect Merchant Trade info.");
+			items.Add(0);
+		}
+		return items;
 	}
 	
 	public static IEnumerable<int> MoveToMerchant(List<object> merchantInfo) {
@@ -334,7 +380,6 @@ public class Merchant
 	}
 	
 	public static void setUsableFood() {
-		InventoryFood = getFoodInInventory();
 		for (int i = 0; i < InventoryFood.Count; i++) {
 			API.GlobalBotSettings.FoodItemIds.Add(InventoryFood[i][0]);
 		}
@@ -343,7 +388,7 @@ public class Merchant
 	public static void setUsableWater() {
 		InventoryWater = getDrinkInInventory();
 		for (int i = 0; i < InventoryWater.Count; i++) {
-			API.GlobalBotSettings.DrinkItemIds.Add(InventoryFood[i][0]);
+			API.GlobalBotSettings.DrinkItemIds.Add(InventoryWater[i][0]);
 		}
 	}
 	
@@ -359,6 +404,7 @@ public class Merchant
 		string itemID;
 		string temp;
 		int ID;
+		API.Print(FoodIDToBuy);
 		for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
@@ -382,19 +428,12 @@ public class Merchant
 	
 	public static int MaxFoodToBuy(int max) {
 		List<int[]> allVendorFoodItems = new List<int[]>();
+		vendorFood = getMerchantFoodList();
 		int total;
-		InventoryFood = getFoodInInventory();
 		// Parse through vendor items, collect all items that match item in bags.
-		string itemID;
-		string temp;
-		int ID; 
-		for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
-			itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
-			temp = itemID.Substring(itemID.IndexOf(':') + 1);
-			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
-			ID = int.Parse(itemID);
+		foreach (int vendorItem in vendorFood) {
 			foreach (int[] unit in InventoryFood) {
-				if (unit[0] == ID) {
+				if (unit[0] == vendorItem) {
 					allVendorFoodItems.Add(unit);
 					break;
 				}
@@ -412,26 +451,20 @@ public class Merchant
 			total = max - highest;
 		}
 		else {
-			total = 100;
-			FoodIDToBuy = allVendorFoodItems[0][0];
+			total = FoodCap;
+			FoodIDToBuy = vendorFood[0];
 		}
 		return total;
 	}
 	
 	public static int MaxDrinkToBuy(int max) {
 		List<int[]> allVendorDrinkItems = new List<int[]>();
+		vendorDrinks = getMerchantDrinkList();
 		int total;
 		// Parse through vendor items, collect all items that match item in bags.
-		string itemID;
-		string temp;
-		int ID;
-		for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
-			itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
-			temp = itemID.Substring(itemID.IndexOf(':') + 1);
-			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
-			ID = int.Parse(itemID);
+		foreach (int drinks in vendorDrinks) {
 			foreach (int[] unit in InventoryWater) {
-				if (unit[0] == ID) {
+				if (unit[0] == drinks) {
 					allVendorDrinkItems.Add(unit);
 					break;
 				}
@@ -449,7 +482,8 @@ public class Merchant
 			total = max - highest;
 		}
 		else {
-			total = 100;
+			total = DrinkCap;
+			DrinkIDToBuy = vendorDrinks[0];
 		}
 		return total;
 	}
@@ -457,7 +491,6 @@ public class Merchant
 	// Method:		"BuyDrink()"
 	public static IEnumerable<int> BuyDrink(int max) {
 		int totalToBuy = MaxDrinkToBuy(max);
-		API.Print(totalToBuy);
 		if (totalToBuy < 1) {
 			totalToBuy = 0;
 		}
@@ -487,8 +520,35 @@ public class Merchant
 		}
 		yield break;
 	}
+		
+	public static void Repair() {
+	// To be filled later
+	}
+	
+	public static IEnumerable<int> RepairCheck() {
+		yield break;
+	}
+	
+	public static bool IsRepairNeeded() {
+		API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+		return false;
+	}
 	
 	public static IEnumerable<int> RestingCheck(){
+				// Continent Selection
+		FoodIDs = new List<int>();
+		DrinkIDs = new List<int>();
+		if (API.Me.ContinentID == 1116) {
+			FoodIDs = DraenorMerchants.getFood();
+			DrinkIDs = DraenorMerchants.getWater();
+		}
+		
+		//default
+		InventoryFood = getFoodInInventory();
+		InventoryWater = getDrinkInInventory();
+		
+		// else if() To be added for other continents.
+		
 		List<object> closest = GetClosestMerchant(1);
 		if (closest.Count > 0) {
 			if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
@@ -506,7 +566,7 @@ public class Merchant
 				
 				// Buy Water if Needed
 				if (API.Me.Class.ToString().Equals("Paladin") || API.Me.Class.ToString().Equals("Priest") || API.Me.Class.ToString().Equals("Shaman") || API.Me.Class.ToString().Equals("Mage") || 
-				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk") || API.Me.Class.ToString().Equals("Hunter")) {
+				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk")) {
 					var check3 = new Fiber<int>(BuyDrink(DrinkCap));
 					while (check3.Run()) {
 						yield return 100;
@@ -525,18 +585,5 @@ public class Merchant
 			}
 		}
 		yield break;
-	}
-	
-	public static void Repair() {
-	// To be filled later
-	}
-	
-	public static IEnumerable<int> RepairCheck() {
-		yield break;
-	}
-	
-	public static bool IsRepairNeeded() {
-		API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
-		return false;
 	}
 }
