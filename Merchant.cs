@@ -24,11 +24,13 @@ public class Merchant
 	private static int FoodIDToBuy;
 	private static int DrinkIDToBuy;
 	// Max amount of food/water to hold, easily adjustable
-	public static int FoodCap = 36;
-	public static int DrinkCap = 36;
+	public static int FoodCap = 100;
+	public static int DrinkCap = 50;
 	// Min amount of food/water to possess before activating vendor logic again.
-	public static int MinFood = 25;
-	public static int MinWater = 25;
+	public static int MinFood = 5;
+	public static int MinWater = 5;
+	// Repair information
+	public static int MinDurability = 20;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
 	
     // Default Constructor
     public Merchant() {}
@@ -342,6 +344,7 @@ public class Merchant
 				API.Me.Focus.Interact();
 				yield return 1500;
 				if (!IsVendorOpen()) {
+					API.Print("test");
 					MerchantGossip();
 					yield return 2000;
 				}
@@ -365,7 +368,7 @@ public class Merchant
         int i = 1;
         string num = "";
         while (result != null) {
-            if (result.Equals("Let me browse your goods.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Fammi vedere la tua merce.") || result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("물건을 살펴보고 싶습니다.") || result.Equals(" 讓我看看你出售的貨物。") || result.Equals("让我看看你出售的货物。")) {
+            if ((result.Equals("Let me browse your goods.") || result.Equals("I want to browse your goods.")) || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Fammi vedere la tua merce.") || result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("물건을 살펴보고 싶습니다.") || result.Equals(" 讓我看看你出售的貨物。") || result.Equals("让我看看你出售的货物。")) {
                 API.ExecuteLua("SelectGossipOption(" + i + ");");
                 break;
             }
@@ -561,8 +564,8 @@ public class Merchant
 		yield break;
 	}
 		
-	public static IEnumerable<int> RestingCheck(){
-				// Continent Selection
+	public static IEnumerable<int> RestingCheck() {
+		// Continent Selection
 		FoodIDs = new List<int>();
 		DrinkIDs = new List<int>();
 		if (API.Me.ContinentID == 1116) {
@@ -612,7 +615,15 @@ public class Merchant
 				// And, since we are at the vendor already, let's clear some loot.
 				SellLootedItems();
 				
-
+				// And, since we are already in town, let's see if it's worth the effort to repair.
+				// Quick repair if at vendor
+				Repair();
+				if (IsRepairVendorNearby() && getDurability() <= 75 || NumItemsBroken() > 0) {
+					var check5 = new Fiber<int>(RepairCheck());
+					while (check5.Run()) {
+						yield return 100;
+					}
+				}
 				API.Print("The Player is Fully Stocked and Ready to Go. Let's Get Back to Work!!!");
 				API.ExecuteLua("CloseMerchant()");
 			}
@@ -620,20 +631,25 @@ public class Merchant
 		yield break;
 	}
 	
-	
-	// ALL SELLING/VENDOR METHODS
-	
+	///////////////////////////////////////////
+	/////							      /////
+	/////   ALL SELLING/VENDOR METHODS    /////
+	/////								  /////
+	///////////////////////////////////////////
 	
 	private static void Repair() {
-	// To be filled later
+		if (IsVendorOpen() && API.ExecuteLua<bool>("return CanMerchantRepair()")) {
+			API.ExecuteLua("RepairAllItems()");
+		}
 	}
-	
-	public static IEnumerable<int> RepairCheck() {
-		yield break;
-	}
-	
+		
+	// Method		"IsRepairNeeded()"
+	//				20% or less equals
 	private static bool IsRepairNeeded() {
-		API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+		if (NumItemsBroken() > 0 || getDurability() <= MinDurability) {
+			API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+			return true;
+		}
 		return false;
 	}
 	
@@ -695,4 +711,104 @@ public class Merchant
 			API.Print("Please Report this On The Forums So We Can Fix it!");
 		}
 	}
+	
+	// Method:		"getDurability()"
+	// Purpose:		Returns the % of character durability.
+	private static int getDurability() {
+		int count = 9;
+		float durability = 0;
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) local result = durability/max; return result");
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) local result = durability/max; return result");
+		for (int i = 5; i <= 10; i++) {
+			durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") local result = durability/max; return result");
+		}
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) local result = durability/max; return result");
+		
+		if (API.ExecuteLua<bool>("local durability = GetInventoryItemDurability(17); if durability ~= nil then return true else return false end")) {
+			durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(17) local result = durability/max; return result");
+			count++;
+		}
+		durability = durability/count * 100;
+		return (int) durability;
+	}
+	
+	// Method		"NumItemsBroken()"
+	// Purpose		Returns if player has any Broken (stored) items
+	private static int NumItemsBroken() {
+		int count = 0;
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) local result = durability/max; return result") < 0.1f) {
+			count++;
+		}
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) local result = durability/max; return result") < 0.1f) {
+			count++;
+		}
+		for (int i = 5; i <= 10; i++) {
+			if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") local result = durability/max; return result") < 0.1f) {
+				count++;
+			}
+		}
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) local result = durability/max; return result") < 0.1f) {
+			count++;
+		}
+		if (API.ExecuteLua<bool>("local durability = GetInventoryItemDurability(17); if durability ~= nil then return true else return false end")) {
+			if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(17) local result = durability/max; return result") < 0.1f) {
+				count++;
+			}
+		}
+		if (count > 0) {
+			API.Print("It Appears You've Taken Some Heavy Damage. Let's Get to a Vendor and Repair!");
+		}
+		return count;
+	}
+	
+	// To verify before running repair Action.
+	private static bool IsRepairVendorNearby() {
+		foreach (var unit in API.Units) {
+			if (!unit.IsDead && unit.HasFlag(UnitNPCFlags.CanRepair)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private static bool IsFoodVendorNearby() {
+		foreach (var unit in API.Units) {
+			if (!unit.IsDead && unit.HasFlag(UnitNPCFlags.SellsFood)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	// Method:		"RepairCheck()"
+	// Purpose:		This is the main method to be run on a recursive loop, ideally, or within something
+	public static IEnumerable<int> RepairCheck() {
+		if (IsRepairNeeded()) {
+			// The number 2 returns a list of known Repair Vendors, and their locations.
+			List<object> closest = GetClosestMerchant(2);
+			if (closest.Count > 0) {
+				// Identifying Merchant and moving to it.
+				var check = new Fiber<int>(MoveToMerchant(closest));
+				while (check.Run()) {
+					yield return 100;
+				}
+				
+				// Interacting with Merchant
+				var check2 = new Fiber<int>(InteractWithMerchant());
+				while (check2.Run()) {
+					yield return 100;
+				}
+				
+				// Clearing our Loot first
+				SellLootedItems();
+				
+				// Repairing
+				Repair();
+				
+				API.ExecuteLua("CloseMerchant()");
+			}
+		}
+		yield break;
+	}
 }
+
