@@ -275,7 +275,7 @@ public class DraenorMerchants {
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-                if (QH.GetGarrisonLevel() > 1) {
+                if (GetGarrisonLevel() > 1) {
                     List<object> list0 = new List<object>(){5568.0f, 4594.3f, 141.7f, 80151, IsSpecialPathingNeeded};
 				    locations.AddRange(list0);
                 }
@@ -317,7 +317,7 @@ public class DraenorMerchants {
 	
 	
     public static IEnumerable<int> doSpecialPathing() {
-        int zoneID = QH.API.Me.ZoneId; 
+        int zoneID = Merchant.API.Me.ZoneId; 
         
         // TALADOR ZONE SPECIAL PATHING!!!!!
         //
@@ -328,25 +328,25 @@ public class DraenorMerchants {
             // Initial logic is a positional check to see if player is inside the Fortress.
             // LOCATION 1
             Vector3 gord1 = new Vector3(1410f, 1728.5f, 310.3f);
-            if (QH.API.Me.Distance2DTo(gord1) < 390)
+            if (Merchant.API.Me.Distance2DTo(gord1) < 390)
             {
                 Vector3 gord2 = new Vector3(1666.5f, 1743.6f, 298.6f);
-                if ((QH.API.Me.Position.Z > 302.4) || ((QH.API.Me.Position.Z > 296.0) && (QH.API.Me.Distance2DTo(gord2) > 47.05)))
+                if ((Merchant.API.Me.Position.Z > 302.4) || ((Merchant.API.Me.Position.Z > 296.0) && (Merchant.API.Me.Distance2DTo(gord2) > 47.05)))
                 {
-                    QH.API.Print("It Appears that You are in Gordal Fortress! Navigating Out...");
+                    Merchant.API.Print("It Appears that You are in Gordal Fortress! Navigating Out...");
                     // Guided pathing out of Gordal Fortress
                     Vector3 gord3 = new Vector3(1645.4f, 1767.4f, 312.5f);
                     Vector3 gord4 = new Vector3(1674.5f, 1729.1f, 291.4f);
-                    while (!QH.API.MoveTo(gord3))
+                    while (!Merchant.API.MoveTo(gord3))
                     {
                         yield return 100;
                     }
-                    QH.API.Print("Let's Avoid that Energy Barrier!");
-                    while(!QH.API.CTM(gord4))
+                    Merchant.API.Print("Let's Avoid that Energy Barrier!");
+                    while(!Merchant.API.CTM(gord4))
                     {
                         yield return 100;
                     }
-                    QH.API.Print("Alright! Back on Track!!!");
+                    Merchant.API.Print("Alright! Back on Track!!!");
                 }
                 yield break;
             }
@@ -355,36 +355,36 @@ public class DraenorMerchants {
             // LOCATION 2
             Vector3 zang1 = new Vector3(3187.2f, 788.7f, 77.7f);
             Vector3 zang2 = new Vector3(3035.2f,  954.0f,  105.5f);
-            if (QH.API.Me.Distance2DTo(zang1) < 302 && QH.API.Me.Distance2DTo(zang2) > 75)
+            if (Merchant.API.Me.Distance2DTo(zang1) < 302 && Merchant.API.Me.Distance2DTo(zang2) > 75)
             {
-                QH.API.Print("Let's First Get Out of Zangarra!");
+                Merchant.API.Print("Let's First Get Out of Zangarra!");
                 // These quick 'Z' height checks are for some tight turns the mesh sometimes handles poorly.
-                if (QH.API.Me.Position.Z < 17)
+                if (Merchant.API.Me.Position.Z < 17)
                 {
                     Vector3 zang3 = new Vector3(3316.2f, 950.4f, 17.4f);
-                    while(!QH.API.MoveTo(zang3))
+                    while(!Merchant.API.MoveTo(zang3))
                     {
                         yield return 100;
                     }
                 }
-                if (QH.API.Me.Position.Z < 32)
+                if (Merchant.API.Me.Position.Z < 32)
                 {
                     Vector3 zang4 = new Vector3(3286.9f, 1013.4f, 38.1f);
-                    while(!QH.API.MoveTo(zang4))
+                    while(!Merchant.API.MoveTo(zang4))
                     {
                         yield return 100;
                     }
                 }
-                if (QH.API.Me.Position.Z < 44)
+                if (Merchant.API.Me.Position.Z < 44)
                 {
                     Vector3 zang5 = new Vector3(3206.1f, 918.8f, 42.2f);
-                    while(!QH.API.MoveTo(zang5))
+                    while(!Merchant.API.MoveTo(zang5))
                     {
                         yield return 100;
                     }
                 }
                 Vector3 zang6 = new Vector3(3198.8f, 836.9f, 83.2f);
-                while(!QH.API.MoveTo(zang6))
+                while(!Merchant.API.MoveTo(zang6))
                 {
                     yield return 100;
                 }
@@ -392,13 +392,13 @@ public class DraenorMerchants {
                 yield return 2500;
                 Vector3 zang7 = new Vector3(3199.5f, 843.6f, 84.3f);
                 
-                while (QH.API.Me.Distance2DTo(zang7) < 30)
+                while (Merchant.API.Me.Distance2DTo(zang7) < 30)
                 {
-                    foreach (var unit in QH.API.GameObjects)
+                    foreach (var unit in Merchant.API.GameObjects)
                     {
                         if (unit.EntryID == 230874)
                         {
-                            while(!QH.API.MoveTo(unit.Position))
+                            while(!Merchant.API.MoveTo(unit.Position))
                             {
                                 yield return 100;
                             }
@@ -407,20 +407,20 @@ public class DraenorMerchants {
                         }
                     }
                 }
-                QH.API.Print("Alright, Let's Continue!");
+                Merchant.API.Print("Alright, Let's Continue!");
                 yield break;
             }
             
             // Navigate out of Voljin's Pride Arsenal
             // LOCATION 3
             Vector3 arsenal = new Vector3(3217.1f, 1606.4f, 166.1f);
-            if (QH.API.Me.Distance2DTo(arsenal) < 15)
+            if (Merchant.API.Me.Distance2DTo(arsenal) < 15)
             {
-                while(!QH.API.CTM(3226.4f, 1600.0f, 166.0f))
+                while(!Merchant.API.CTM(3226.4f, 1600.0f, 166.0f))
                 {
                     yield return 100;
                 }
-                while(!QH.API.CTM(3241.7f, 1589.6f, 163.2f))
+                while(!Merchant.API.CTM(3241.7f, 1589.6f, 163.2f))
                 {
                     yield return 100;
                 }
@@ -431,15 +431,15 @@ public class DraenorMerchants {
             // LOCATION 4
             Vector3 shatt1 = new Vector3(2604.9f, 2797.0f, 242.1f);
             Vector3 shatt2 = new Vector3(2943.0f, 3351.9f, 53.0f);
-            if (QH.API.Me.Level > 99 && QH.API.Me.Distance2DTo(shatt2) < 430 && QH.API.Me.Position.Z < 125)
+            if (Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125)
             {
-                QH.API.Print("Let's Move out of Shattrath. The elevator in the Sha'tari Market District Looks Good...");
-                var check = new Fiber<int>(QH.TakeElevator(231934,7,2687.2f,3017.5f,69.5f,2682.8f,2995.0f,233.9f));
+                Merchant.API.Print("Let's Move out of Shattrath. The elevator in the Sha'tari Market District Looks Good...");
+                var check = new Fiber<int>(TakeElevator(231934,7,2687.2f,3017.5f,69.5f,2682.8f,2995.0f,233.9f));
                 while (check.Run())
                 {
                     yield return 100;
                 }
-                QH.API.Print("Let's Get to that Flightpath and Get Out of Here!");
+                Merchant.API.Print("Let's Get to that Flightpath and Get Out of Here!");
                 yield break;
             }
             yield break;     
@@ -452,14 +452,14 @@ public class DraenorMerchants {
         // BEGIN
         if (zoneID == 6941 || zoneID == 7548)
         {
-            QH.API.Print("Woah! Let's Get Out of Ashran Before Some Alliance Find You!");
+            Merchant.API.Print("Woah! Let's Get Out of Ashran Before Some Alliance Find You!");
             Vector3 ash = new Vector3(5090.1f, -3982.3f, 20.8f);
-            while(!QH.API.MoveTo(ash))
+            while(!Merchant.API.MoveTo(ash))
             {
                 yield return 100;
             }
             Vector3 ash2 = new Vector3(5141.9f, -3964.1f, 2.2f);
-            while(!QH.API.MoveTo(ash2))
+            while(!Merchant.API.MoveTo(ash2))
             {
                 yield return 100;
             }
@@ -469,7 +469,118 @@ public class DraenorMerchants {
         // Enter any additional pathing.
         yield break;
     }
+    
+    // Method:          "GetGarrisonLevel();
+    // What it Does:    Returns the current rank of the player garrison, 1-3
+    // Purpose:         When dealing with various pathing at the Garrison, it is important to note that object
+    //                  location often varies based on the level and size of the ggarrison. This helps filter it all.
+    public static int GetGarrisonLevel()
+    {
+        return Merchant.API.ExecuteLua<int>("local level = C_Garrison.GetGarrisonInfo(); return level;");
+    }
 	
+    // Method:          TakeElevator(int,int,float,float,float,float,float,float)
+    // What it Does:    Allows the navigation of any elevator! This Elevator method allows the input of a starting position!
+    // Purpose:         At times in the script, transversing an elevator effectively can be a cumbersome to program
+    //                  and as such I wrote a scalable method... the only key thing needed is for the developer to
+    //                  time how long it takes the elevator to go from the bottom to the top, or the other way around.
+    //                  Also, the position you would like the player to exit the elevator and travel to.  The travel time
+    //                  was kind of a rough solution because it appears that while on the elevator, the API freezes all return values
+    //                  thus I cannot seem to get an accurate positional check, so the timing allows me to enter, then determine exit time.
+    public static IEnumerable<int> TakeElevator(int ElevatorID, int elevatorTravelTime, float startX, float startY, float startZ, float x, float y, float z) 
+    {
+        double position;
+        double position2;
+        bool elevatorFound = false;
+        // Starting position to navigate to and wait for elevator (PLACE AT SAME LEVEL AS Elevator)
+        Vector3 start = new Vector3(startX,startY,startZ);
+        Vector3 destination = new Vector3(x,y,z);
+        
+        while (!Merchant.API.MoveTo(start))
+        {
+            yield return 100;
+        }
+        foreach (var unit in Merchant.API.GameObjects)
+        {
+            // This first determines if the elevator is properly identified.
+        	if (unit.EntryID == ElevatorID)
+        	{
+                elevatorFound = true;
+                Merchant.API.SetFacing(unit);
+                // The choice to disable combat is because once on the elevator, player should not attempt to leave it
+                // or it could mess up the passing as the bot remembers its last spot before combat starts then returns to it
+                Merchant.API.DisableCombat = true;
+                Merchant.API.Print("Waiting For the Elevator...");
+                position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                yield return 100;
+                position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                yield return 100;
+                
+                // The two positional checks right after each other are to determine movement of the elevator.
+                // if they are equal, elevator is not moving, but if they are different, like the second location is further than the first,
+                // then it can easily be determined it is moving away from you.
+                // This first check holds position until the elevator moves.  This is actually really critical because what if
+                // player arrives at the elevator and the elevator is at location already.  The method would recognize this then quickly try to jump on.
+                // This could create a problem though because what if the elevator was only going to be there a split second more, then player tries to
+                // traverse then ends up missing it.  This just helps avoid that... Long explanation I know.
+                while (position == position2)
+                {
+                    position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                    yield return 100;
+                    position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                    yield return 100;
+                }
+                // Meaning it is moving away from you or it is at least 10 yrds away.
+                if (position != position2 || Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit)) > 10.0) 
+                {
+                    Merchant.API.Print("Elevator is Moving...");
+                    if (position > position2) 
+                    {
+                        Merchant.API.Print("Elevator is Moving Towards Us... Almost Here!");
+                    }
+                    else 
+                    {
+                        Merchant.API.Print("Elevator is Moving Away! Patience!");
+                        while(position != position2) 
+                        {
+                            position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                            yield return 100;
+                            position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                            yield return 100;
+                        }
+                        Merchant.API.Print("Elevator Has Stopped at Other Side.  Let's Wait For It To Return!");
+                        while(position == position2) 
+                        {
+                            position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                            yield return 100;
+                            position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
+                            yield return 100;
+                        }
+                        Merchant.API.Print("Alright, It Is Coming Back to us. Get Ready!");
+                    }
+                    while(unit.Position.Z > (startZ + 1.0)) 
+                    {
+                        yield return 100;
+                    }
+                }
+                Merchant.API.Print("Ah, Excellent! Elevator is Here! Hop On Quick!");
+                Merchant.API.CTM(unit.Position);
+                // The 4 seconds is added here to account for the stoppage of when you enter the elevator and it is stationary
+                yield return ((elevatorTravelTime + 4) * 1000);
+                while(!Merchant.API.CTM(destination)) 
+                {
+                    yield return 200;
+                }
+                Merchant.API.Print("You Have Successfully Beaten the Elevator Boss... Congratulations!!!");
+        	}
+        }
+        if (!elevatorFound) 
+        {
+            Merchant.API.Print("No Elevator Found. Please Be Sure elevator ID is Entered Properly and You are Next to It");
+            yield break;
+        }
+        Merchant.API.DisableCombat = false;
+    }
 	
 }
 
