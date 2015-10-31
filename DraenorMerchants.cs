@@ -275,6 +275,7 @@ public class DraenorMerchants {
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
+                // Garrison Locations
                 if (GetGarrisonLevel() > 1) {
                     List<object> list0 = new List<object>(){5568.0f, 4594.3f, 141.7f, 80151, IsSpecialPathingNeeded};
 				    locations.AddRange(list0);
@@ -283,14 +284,44 @@ public class DraenorMerchants {
                     List<object> list0 = new List<object>(){5569.9f, 4513.0f, 129.9f, 80151, IsSpecialPathingNeeded};
 				    locations.AddRange(list0);
                 }
-				
+                // All the Rest
+                // Spire has a quest completion conditional to be added
+                if (Merchant.API.IsQuestCompleted(33657)) {
+                    List<object> list1 = new List<object>(){6789.5f, 5865.6f, 258.7f, 76746, IsSpecialPathingNeeded};
+                    locations.AddRange(list1);
+                }
+                List<object> list2 = new List<object>(){7860.1f, 5551.3f, 111.1f, 78769, IsSpecialPathingNeeded};
+                locations.AddRange(list2);
 			}
-			// Repair
-			else if(vendorType == 2) {
-				
+			//  // Repair
+			else if (vendorType == 2) {
+				List<object> vend0 = new List<object>(){6141.0f, 5050.2f, 133.9f, 77456, IsSpecialPathingNeeded};
+                locations.AddRange(vend0);
+                List<object> vend1 = new List<object>(){6118.6f, 4991.5f, 133.5f, 78989, IsSpecialPathingNeeded};
+                locations.AddRange(vend1);
+                List<object> vend2 = new List<object>(){5910.6f, 6227.8f, 50.0f, 79448, IsSpecialPathingNeeded};
+                locations.AddRange(vend2);
+                List<object> vend3 = new List<object>(){5867.8f, 6340.8f, 62.9f, 77462, IsSpecialPathingNeeded};
+                locations.AddRange(vend3);
+                if (Merchant.API.IsQuestCompleted(33657)) {
+                    List<object> vend4 = new List<object>(){6788.9f, 5867.3f, 258.7f, 74471, IsSpecialPathingNeeded};
+                    locations.AddRange(vend4);
+                    List<object> vend5 = new List<object>(){6734.4f, 5811.0f, 258.7f, 77470, IsSpecialPathingNeeded};
+                    locations.AddRange(vend5);
+                }
+                List<object> vend6 = new List<object>(){7759.9f, 5588.7f, 110.9f, 78770, IsSpecialPathingNeeded};
+                locations.AddRange(vend6);
+                
 			}
-            
-            // Both
+            //  BOTH
+            if (GetGarrisonLevel() > 1) {
+                List<object> both0 = new List<object>(){5626.8f, 4629.7f, 139.3f, 76872, IsSpecialPathingNeeded};
+                locations.AddRange(both0);
+            }
+            else {
+                List<object> both0 = new List<object>(){5651.4f, 4527.0f, 119.1f, 76872, IsSpecialPathingNeeded};
+                locations.AddRange(both0);
+            }
 		}
         else
 		{
