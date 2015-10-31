@@ -12,17 +12,17 @@ public class Merchant
 	public static ReBotAPI API;
     public static Fiber<int> Fib;
 	// List of all potential food/drink items good for
-	public static List<int> DrinkIDs;
-	public static List<int> FoodIDs;
+	private static List<int> DrinkIDs;
+	private static List<int> FoodIDs;
 	// List of all food items and drink items on the given vendor.
-	public static List<int> vendorDrinks;
-	public static List<int> vendorFood;
+	private static List<int> vendorDrinks;
+	private static List<int> vendorFood;
 	// List of Arrays, containing in position 0, item ID Number; position 1, quantity owned in bags.
-	public static List<int[]> InventoryFood;
-	public static List<int[]> InventoryWater;
+	private static List<int[]> InventoryFood;
+	private static List<int[]> InventoryWater;
 	// Eventual ID of the food/water player will purchase from the vendor.
-	public static int FoodIDToBuy;
-	public static int DrinkIDToBuy;
+	private static int FoodIDToBuy;
+	private static int DrinkIDToBuy;
 	// Max amount of food/water to hold, easily adjustable
 	public static int FoodCap = 36;
 	public static int DrinkCap = 36;
@@ -33,12 +33,12 @@ public class Merchant
     // Default Constructor
     public Merchant() {}
 		
-	public static List<int[]> getFoodInInventory() {
+	private static List<int[]> getFoodInInventory() {
 		List<int[]> owned = new List<int[]>();
-		var Inv = Inventory.Items;
 		// I need to initialize the bags...
 		Inventory.Refresh();
-		
+		var Inv = Inventory.Items;
+						
 		int count = 0;
 		foreach (var item in Inv) {
 			for (int i = 0; i < FoodIDs.Count; i++) {
@@ -86,12 +86,12 @@ public class Merchant
 		return owned;
 	}
 	
-	public static List<int[]> getDrinkInInventory() {
+	private static List<int[]> getDrinkInInventory() {
 		List<int[]> owned = new List<int[]>();
-		var Inv = Inventory.Items;
 		// I need to initialize the bags...
 		Inventory.Refresh();
-		
+		var Inv = Inventory.Items;
+
 		int count = 0;
 		foreach (var item in Inv) {
 			for (int i = 0; i < DrinkIDs.Count; i++) {
@@ -139,7 +139,7 @@ public class Merchant
 		return owned;
 	}
 	
-	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
+	private static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
 		int highestAmount = 0;
 		foreach(int[] foodAmount in InventoryFood) {
@@ -167,7 +167,7 @@ public class Merchant
 		return false;
 	}
 	
-	public static List<object> getVendorInfo(int TypeofMerchant) {
+	private static List<object> getVendorInfo(int TypeofMerchant) {
 		List<object> vendor = new List<object>();
         int continentID = API.Me.ContinentID;
         int zoneID = API.Me.ZoneId;
@@ -183,7 +183,7 @@ public class Merchant
         return vendor;
 	}
 	
-	public static List<int> getMerchantFoodList() {
+	private static List<int> getMerchantFoodList() {
 		List<int> items = new List<int>();
 		if (IsVendorOpen()) {
 			string itemID;
@@ -209,7 +209,7 @@ public class Merchant
 		return items;
 	}
 	
-	public static List<int> getMerchantDrinkList() {
+	private static List<int> getMerchantDrinkList() {
 		List<int> items = new List<int>();
 		if (IsVendorOpen()) {
 			string itemID;
@@ -235,7 +235,7 @@ public class Merchant
 		return items;
 	}
 	
-	public static IEnumerable<int> MoveToMerchant(List<object> merchantInfo) {
+	private static IEnumerable<int> MoveToMerchant(List<object> merchantInfo) {
 		// If Empty Result, Zone not known.
 		if (merchantInfo.Count == 0) {
 			API.Print("Unfortunately the Zone Your Are in Does Not Have the Food and Drink NPCs Mapped yet!");
@@ -294,7 +294,7 @@ public class Merchant
         }
 	}
 	
-	public static List<object> GetClosestMerchant(int TypeofMerchant) {
+	private static List<object> GetClosestMerchant(int TypeofMerchant) {
 		List<object> vendor = new List<object>();
         List<object> result = new List<object>();
 		
@@ -335,7 +335,8 @@ public class Merchant
 		return result;		
 	}
 	
-	public static IEnumerable<int> InteractWithMerchant() {
+	// Method:		"InteractWithMerchant()"
+	private static IEnumerable<int> InteractWithMerchant() {
 		if (API.Me.Focus != null) {
 			while(!IsVendorOpen()) {
 				API.Me.Focus.Interact();
@@ -350,11 +351,11 @@ public class Merchant
 	}
 	
 	// Method:		"IsVendorOpen()"
-	public static bool IsVendorOpen() {
+	private static bool IsVendorOpen() {
 		return API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
 	}
 	
-	public static void MerchantGossip() {
+	private static void MerchantGossip() {
 		// Initializing Function
         string title = "title0";
         string luaCall = ("local title0,_ = GetGossipOptions(); if title0 ~= nil then return title0 else return \"nil\" end");
@@ -379,21 +380,61 @@ public class Merchant
         }
 	}
 	
-	public static void setUsableFood() {
+	private static void setUsableFood() {
+		InventoryFood = getFoodInInventory();
+		bool found;
+		bool found2;
 		for (int i = 0; i < InventoryFood.Count; i++) {
-			API.GlobalBotSettings.FoodItemIds.Add(InventoryFood[i][0]);
+			found = false;
+			foreach (int foodID in API.GlobalBotSettings.FoodItemIds) {
+				if (foodID == InventoryFood[i][0]) {
+					found = true;
+				}
+			}
+			if (!found) {
+				API.GlobalBotSettings.FoodItemIds.Add(InventoryFood[i][0]);
+			}
+			// We should also add these to the "Protected" list to not sell.
+			found2 = false;
+			foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds) {
+				if (protectedID == InventoryFood[i][0]) {
+					found2 = true;
+				}
+			}
+			if (!found2) {
+				API.GlobalBotSettings.ProtectedItemIds.Add(InventoryFood[i][0]);
+			}
 		}
 	}
 	
-	public static void setUsableWater() {
+	private static void setUsableWater() {
 		InventoryWater = getDrinkInInventory();
+		bool found;
+		bool found2;
 		for (int i = 0; i < InventoryWater.Count; i++) {
-			API.GlobalBotSettings.DrinkItemIds.Add(InventoryWater[i][0]);
+			found = false;
+			foreach (int drinkID in API.GlobalBotSettings.DrinkItemIds) {
+				if (drinkID == InventoryWater[i][0]) {
+					found = true;
+				}
+			}
+			if (found == false) {
+				API.GlobalBotSettings.DrinkItemIds.Add(InventoryWater[i][0]);
+			}
+			// We should also add these to the "Protected" list to not sell.
+			found2 = false;
+			foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds) {
+				if (protectedID == InventoryWater[i][0]) {
+					found2 = true;
+				}
+			}
+			if (!found2) {
+				API.GlobalBotSettings.ProtectedItemIds.Add(InventoryWater[i][0]);
+			}
 		}
 	}
-	
 	// Method:		"BuyFood()"
-	public static IEnumerable<int> BuyFood(int max) {
+	private static IEnumerable<int> BuyFood(int max) {
 		int totalToBuy = MaxFoodToBuy(max);
 		if (totalToBuy < 1) {
 			totalToBuy = 0;
@@ -404,7 +445,6 @@ public class Merchant
 		string itemID;
 		string temp;
 		int ID;
-		API.Print(FoodIDToBuy);
 		for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
 			itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
 			temp = itemID.Substring(itemID.IndexOf(':') + 1);
@@ -426,7 +466,7 @@ public class Merchant
 		yield break;
 	}
 	
-	public static int MaxFoodToBuy(int max) {
+	private static int MaxFoodToBuy(int max) {
 		List<int[]> allVendorFoodItems = new List<int[]>();
 		vendorFood = getMerchantFoodList();
 		int total;
@@ -457,7 +497,7 @@ public class Merchant
 		return total;
 	}
 	
-	public static int MaxDrinkToBuy(int max) {
+	private static int MaxDrinkToBuy(int max) {
 		List<int[]> allVendorDrinkItems = new List<int[]>();
 		vendorDrinks = getMerchantDrinkList();
 		int total;
@@ -489,7 +529,7 @@ public class Merchant
 	}
 	
 	// Method:		"BuyDrink()"
-	public static IEnumerable<int> BuyDrink(int max) {
+	private static IEnumerable<int> BuyDrink(int max) {
 		int totalToBuy = MaxDrinkToBuy(max);
 		if (totalToBuy < 1) {
 			totalToBuy = 0;
@@ -521,19 +561,6 @@ public class Merchant
 		yield break;
 	}
 		
-	public static void Repair() {
-	// To be filled later
-	}
-	
-	public static IEnumerable<int> RepairCheck() {
-		yield break;
-	}
-	
-	public static bool IsRepairNeeded() {
-		API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
-		return false;
-	}
-	
 	public static IEnumerable<int> RestingCheck(){
 				// Continent Selection
 		FoodIDs = new List<int>();
@@ -549,9 +576,9 @@ public class Merchant
 		
 		// else if() To be added for other continents.
 		
-		List<object> closest = GetClosestMerchant(1);
-		if (closest.Count > 0) {
-			if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
+		if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
+			List<object> closest = GetClosestMerchant(1);
+			if (closest.Count > 0) {
 				// Identifying Merchant and moving to it.
 				var check = new Fiber<int>(MoveToMerchant(closest));
 				while (check.Run()) {
@@ -566,7 +593,7 @@ public class Merchant
 				
 				// Buy Water if Needed
 				if (API.Me.Class.ToString().Equals("Paladin") || API.Me.Class.ToString().Equals("Priest") || API.Me.Class.ToString().Equals("Shaman") || API.Me.Class.ToString().Equals("Mage") || 
-				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk")) {
+				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk") || API.Me.Class.ToString().Equals("Hunter")) {
 					var check3 = new Fiber<int>(BuyDrink(DrinkCap));
 					while (check3.Run()) {
 						yield return 100;
@@ -577,13 +604,95 @@ public class Merchant
 				while (check4.Run()) {
 					yield return 100;
 				}
+				API.Print("Refreshments Replenished!");
 				// Updating Food and Water Lists
 				setUsableFood();
 				setUsableWater();
-				API.Print("Refreshments Replenished! Back to Work!!!");
+				
+				// And, since we are at the vendor already, let's clear some loot.
+				SellLootedItems();
+				
+
+				API.Print("The Player is Fully Stocked and Ready to Go. Let's Get Back to Work!!!");
 				API.ExecuteLua("CloseMerchant()");
 			}
 		}
 		yield break;
+	}
+	
+	
+	// ALL SELLING/VENDOR METHODS
+	
+	
+	private static void Repair() {
+	// To be filled later
+	}
+	
+	public static IEnumerable<int> RepairCheck() {
+		yield break;
+	}
+	
+	private static bool IsRepairNeeded() {
+		API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+		return false;
+	}
+	
+	private static List<int> getItemsToSell() {
+		List<int> itemsToSell = new List<int>();
+		
+		// Verifying no protected items in list, and if so, removing.
+		bool toAdd;
+		foreach (int toSellID in API.GlobalBotSettings.Sell_LootedItems) {
+			toAdd = true;
+			foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds) {
+				if (protectedID == toSellID) {
+					toAdd = false;
+				}
+			}
+			// Adding it to sell list.
+			if (toAdd == true) {
+				itemsToSell.Add(toSellID);
+			}
+		} 
+		// Note: Since these lists are pulled directly from Rebot, it auto-filters duplicates already
+		// so we do not need to check for duplicates and filter them here.
+		return itemsToSell;
+	}
+	
+	// Method:		"SellLootedItems(List<int>)"
+	public static void SellLootedItems() {
+		// For future use to sell specific "types" of gear.
+		List<int> itemsToSell = getItemsToSell();
+		string grey = "ff9d9d9d";
+		string white = "ffffffff";
+		string green = "ff1eff00";
+		string blue = "ff0070dd";
+		string purple = "ffa335ee";
+		
+		if (IsVendorOpen()) {
+			// Sell Grey Items
+			API.Print("Selling Any \"junk\" items in your Inventory.");
+			API.ExecuteMacro("/run for b=0,4 do for s=1,GetContainerNumSlots(b)do local n=GetContainerItemLink(b,s)if n and strfind(n,\"" + grey + "\") then print(\"Selling \"..n) UseContainerItem(b,s)end end end");
+			
+			// Sell All "Looted Items"
+			bool found;
+			if (itemsToSell.Count > 0) {
+				API.Print("Selling All Items that You Have Looted and are Not on the \"Protected\" list");
+			}
+			foreach (int itemID in getItemsToSell()) {
+				found = false;
+				found = API.ExecuteLua<bool>("local match = false; for i=0,4 do for j=1,GetContainerNumSlots(i)do local n=GetContainerItemID(i,j)if n == " + itemID + " then local s=GetContainerItemLink(i,j)print(\"Selling \"..s)match = true; end end end return match");
+				if (found) {
+					// Action to sell item.
+					API.UseItem(itemID);
+				}
+			}
+			// Let's clear the list of stored items to sell.
+			API.GlobalBotSettings.Sell_LootedItems.Clear();
+		}
+		else {
+			API.Print("Player Failed to Sell goods. For Some Reason, Interaction with Vendor Failed.");
+			API.Print("Please Report this On The Forums So We Can Fix it!");
+		}
 	}
 }
