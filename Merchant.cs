@@ -34,7 +34,27 @@ public class Merchant
 	
     // Default Constructor
     public Merchant() {}
-		
+	
+	// Method:		"InitializeMerchant()"
+	// 				Helps Reduce overhead so only need to initialize the one time.
+	//				THIS NEEDS TO BE RUN AT THE VERY BEGINNING OF ALL PROFILES JUST ONCE!!! ("Merchant.Initialize();")
+	public static void Initialize() {
+		// Continent Selection
+		FoodIDs = new List<int>();
+		DrinkIDs = new List<int>();
+		if (API.Me.ContinentID == 1116) {
+			FoodIDs = DraenorMerchants.getFood();
+			DrinkIDs = DraenorMerchants.getWater();
+		}
+		//default
+		InventoryFood = getFoodInInventory();
+		InventoryWater = getDrinkInInventory();
+		// else if() To be added for other continents.
+	}
+	
+	// Method:			"getFoodInInventory()"
+	// What it Does:	This returns a List of Arrays, each array including first (position 0), the itemID in your bags that is found to be a match
+	//					for the given zone.
 	private static List<int[]> getFoodInInventory() {
 		List<int[]> owned = new List<int[]>();
 		// I need to initialize the bags...
@@ -141,7 +161,7 @@ public class Merchant
 		return owned;
 	}
 	
-	private static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
+	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
 		int highestAmount = 0;
 		foreach(int[] foodAmount in InventoryFood) {
@@ -270,9 +290,9 @@ public class Merchant
             
             // Add connections to other Classes for other continents here...
             //  else if (API.Me.ContinentID == 1) {
-            //	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
-			//	while(check.Run()) 
-			//		yield retun 100;
+				//	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
+				//	while(check.Run()) 
+				//		yield retun 100;
             //  }
         }
 		
@@ -368,7 +388,7 @@ public class Merchant
         int i = 1;
         string num = "";
         while (result != null) {
-            if ((result.Equals("Let me browse your goods.") || result.Equals("I want to browse your goods.")) || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Fammi vedere la tua merce.") || result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("물건을 살펴보고 싶습니다.") || result.Equals(" 讓我看看你出售的貨物。") || result.Equals("让我看看你出售的货物。")) {
+            if ((result.Equals("Let me browse your goods.") || result.Equals("I want to browse your goods.")) || (result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Quiero ver tus mercancías.")) || (result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Quero ver o que você tem à venda.")) || (result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Ich sehe mich nur mal um.")) || (result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Quiero ver tus mercancías.")) || (result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Je voudrais regarder vos articles.")) || (result.Equals("Fammi vedere la tua merce.") || result.Equals("Voglio dare un'occhiata alla tua merce.")) || (result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("Я хочу посмотреть на ваши товары.")) || (result.Equals("물건을 살펴보고 싶습니다.") || result.Equals("물건을 보고 싶습니다.")) || (result.Equals(" 讓我看看你出售的貨物。") || result.Equals("我想要看看你賣的貨物。")) || (result.Equals("让我看看你出售的货物。") || result.Equals("我想要看看你卖的货物。"))) {
                 API.ExecuteLua("SelectGossipOption(" + i + ");");
                 break;
             }
@@ -563,22 +583,10 @@ public class Merchant
 		}
 		yield break;
 	}
-		
+			
 	public static IEnumerable<int> RestingCheck() {
-		// Continent Selection
-		FoodIDs = new List<int>();
-		DrinkIDs = new List<int>();
-		if (API.Me.ContinentID == 1116) {
-			FoodIDs = DraenorMerchants.getFood();
-			DrinkIDs = DraenorMerchants.getWater();
-		}
-		
-		//default
-		InventoryFood = getFoodInInventory();
-		InventoryWater = getDrinkInInventory();
-		
-		// else if() To be added for other continents.
-		
+		// Initialize the Script and pulls all info from appropriate pathing
+		// Determins if necessary to start resting Script.
 		if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
 			List<object> closest = GetClosestMerchant(1);
 			if (closest.Count > 0) {
@@ -645,7 +653,7 @@ public class Merchant
 		
 	// Method		"IsRepairNeeded()"
 	//				20% or less equals
-	private static bool IsRepairNeeded() {
+	public static bool IsRepairNeeded() {
 		if (NumItemsBroken() > 0 || getDurability() <= MinDurability) {
 			API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
 			return true;
