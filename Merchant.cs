@@ -4,37 +4,75 @@
 |   To Be Used with "InsertContinentName.cs" and "Localization.cs" class
 |   For use in collaboration with the Rebot API 
 |
-|   Last Update 26th Oct, 2015 */
+|   Last Update Nov. 2nd, 2015 */
 
 
 public class Merchant
 {
-	public static ReBotAPI API;
-    public static Fiber<int> Fib;
+	// All Instance Variables
+	// Initialization boolean check before all PUBLIC available API for error prevention on use of API. (Fool-proofing).
+	private static bool IsScriptInitialized = false;
+	
 	// List of all potential food/drink items good for
 	private static List<int> DrinkIDs;
 	private static List<int> FoodIDs;
+	
 	// List of all food items and drink items on the given vendor.
 	private static List<int> vendorDrinks;
 	private static List<int> vendorFood;
+	
 	// List of Arrays, containing in position 0, item ID Number; position 1, quantity owned in bags.
 	private static List<int[]> InventoryFood;
 	private static List<int[]> InventoryWater;
+	
 	// Eventual ID of the food/water player will purchase from the vendor.
 	private static int FoodIDToBuy;
 	private static int DrinkIDToBuy;
+	
 	// Max amount of food/water to hold, easily adjustable
-	public static int FoodCap = 100;
-	public static int DrinkCap = 50;
+	public static int FoodCap = 25;
+	public static int DrinkCap = 25;
+	
 	// Min amount of food/water to possess before activating vendor logic again.
-	public static int MinFood = 5;
-	public static int MinWater = 5;
+	public static int MinFood = 2;
+	public static int MinWater = 2;
+	
 	// Repair information
-	public static int MinDurability = 20;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
+	public static int MinDurability = 90;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
+	
+	// Rebot API Access and Integration
+	public static ReBotAPI API;
+    public static Fiber<int> Fib;
 	
     // Default Constructor
     public Merchant() {}
+	
+	// Method:		"InitializeMerchant()"
+	// 				Helps Reduce overhead so only need to initialize the one time.
+	//				THIS NEEDS TO BE RUN AT THE VERY BEGINNING OF ALL PROFILES JUST ONCE!!! ("Merchant.Initialize();")
+	public static void Initialize() {
+		IsScriptInitialized = true;
+		// Continent Selection
+		FoodIDs = new List<int>();
+		DrinkIDs = new List<int>();
+		if (API.Me.ContinentID == 1116) {
+			FoodIDs = DraenorMerchants.getFood();
+			DrinkIDs = DraenorMerchants.getWater();
+		}
+		// else if() To be added for other continents.
 		
+		//default
+		InventoryFood = getFoodInInventory();
+		InventoryWater = getDrinkInInventory();
+		
+		// Ensure all food/drink items in inventory are established to be used.
+		setUsableFood();
+		setUsableWater();
+	}
+	
+	// Method:			"getFoodInInventory()"
+	// What it Does:	This returns a List of Arrays, each array including first (position 0), the itemID in your bags that is found to be a match
+	//					for the given zone.
 	private static List<int[]> getFoodInInventory() {
 		List<int[]> owned = new List<int[]>();
 		// I need to initialize the bags...
@@ -141,7 +179,11 @@ public class Merchant
 		return owned;
 	}
 	
-	private static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {		
+	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
+		// Initialization check
+		if (!IsScriptInitialized) {
+			Initialize();
+		}
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
 		int highestAmount = 0;
 		foreach(int[] foodAmount in InventoryFood) {
@@ -151,7 +193,6 @@ public class Merchant
 		}
 		
 		if (highestAmount < numMinimumFood) {
-			API.Print("Player is Low on Food! Heading to Restock!!!");
 			return true;
 		}
 		else {
@@ -162,7 +203,6 @@ public class Merchant
 				}
 			}
 			if (highestAmountWater < numMinimumWater) {
-				API.Print("Player is Low on Water! Head to Restock!!!");
 				return true;
 			}
 		}
@@ -240,7 +280,7 @@ public class Merchant
 	private static IEnumerable<int> MoveToMerchant(List<object> merchantInfo) {
 		// If Empty Result, Zone not known.
 		if (merchantInfo.Count == 0) {
-			API.Print("Unfortunately the Zone Your Are in Does Not Have the Food and Drink NPCs Mapped yet!");
+			API.Print("Unfortunately the Zone Your Are in Does Not Have the Necessary NPCs Mapped yet!");
 			API.Print("It Would Be Amazing if You Could Report Back on the Forums This Issue! Thank you!");
 			yield break;
 		}
@@ -257,7 +297,7 @@ public class Merchant
         if (distance == 1) {
             yards = "Yard";
         }
-        API.Print("Traveling Roughly " + distance + " " + yards + " to Get to the Closest VendorManager...");
+        API.Print("Traveling Roughly " + distance + " " + yards + " to Get to the Closest NPC...");
 		
 		// This is where to add special pathing considerations.
         if (IsSpecialPathingNeeded) {
@@ -270,9 +310,9 @@ public class Merchant
             
             // Add connections to other Classes for other continents here...
             //  else if (API.Me.ContinentID == 1) {
-            //	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
-			//	while(check.Run()) 
-			//		yield retun 100;
+				//	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
+				//	while(check.Run()) 
+				//		yield retun 100;
             //  }
         }
 		
@@ -291,6 +331,8 @@ public class Merchant
         }
         
         // Edging closer to the Merchant!
+		// Dismounting First!
+		Merchant.API.Dismount();
         while(API.Me.Focus != null && !API.MoveTo(API.Me.Focus.Position)) {
             yield return 100;
         }
@@ -368,7 +410,7 @@ public class Merchant
         int i = 1;
         string num = "";
         while (result != null) {
-            if ((result.Equals("Let me browse your goods.") || result.Equals("I want to browse your goods.")) || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Fammi vedere la tua merce.") || result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("물건을 살펴보고 싶습니다.") || result.Equals(" 讓我看看你出售的貨物。") || result.Equals("让我看看你出售的货物。")) {
+            if ((result.Equals("Let me browse your goods.") || result.Equals("I want to browse your goods.")) || (result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Quiero ver tus mercancías.")) || (result.Equals("Deixe-me dar uma olhada nas suas mercadorias.") || result.Equals("Quero ver o que você tem à venda.")) || (result.Equals("Ich möchte ein wenig in Euren Waren stöbern.") || result.Equals("Ich sehe mich nur mal um.")) || (result.Equals("Deja que eche un vistazo a tus mercancías.") || result.Equals("Quiero ver tus mercancías.")) || (result.Equals("Permettez-moi de jeter un œil à vos biens.") || result.Equals("Je voudrais regarder vos articles.")) || (result.Equals("Fammi vedere la tua merce.") || result.Equals("Voglio dare un'occhiata alla tua merce.")) || (result.Equals("Позвольте взглянуть на ваши товары.") || result.Equals("Я хочу посмотреть на ваши товары.")) || (result.Equals("물건을 살펴보고 싶습니다.") || result.Equals("물건을 보고 싶습니다.")) || (result.Equals(" 讓我看看你出售的貨物。") || result.Equals("我想要看看你賣的貨物。")) || (result.Equals("让我看看你出售的货物。") || result.Equals("我想要看看你卖的货物。"))) {
                 API.ExecuteLua("SelectGossipOption(" + i + ");");
                 break;
             }
@@ -563,23 +605,16 @@ public class Merchant
 		}
 		yield break;
 	}
-		
+			
 	public static IEnumerable<int> RestingCheck() {
-		// Continent Selection
-		FoodIDs = new List<int>();
-		DrinkIDs = new List<int>();
-		if (API.Me.ContinentID == 1116) {
-			FoodIDs = DraenorMerchants.getFood();
-			DrinkIDs = DraenorMerchants.getWater();
+		// Initialization check
+		if (!IsScriptInitialized) {
+			Initialize();
 		}
-		
-		//default
-		InventoryFood = getFoodInInventory();
-		InventoryWater = getDrinkInInventory();
-		
-		// else if() To be added for other continents.
-		
+		// Initialize the Script and pulls all info from appropriate pathing
+		// Determins if necessary to start resting Script.
 		if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
+			API.Print("Player is Low on Refreshments! Heading to Restock!!!");
 			List<object> closest = GetClosestMerchant(1);
 			if (closest.Count > 0) {
 				// Identifying Merchant and moving to it.
@@ -618,7 +653,7 @@ public class Merchant
 				// And, since we are already in town, let's see if it's worth the effort to repair.
 				// Quick repair if at vendor
 				Repair();
-				if (IsRepairVendorNearby() && getDurability() <= 75 || NumItemsBroken() > 0) {
+				if (IsRepairVendorNearby() && getDurability() <= 90 || NumItemsBroken() > 0) {
 					var check5 = new Fiber<int>(RepairCheck());
 					while (check5.Run()) {
 						yield return 100;
@@ -645,9 +680,12 @@ public class Merchant
 		
 	// Method		"IsRepairNeeded()"
 	//				20% or less equals
-	private static bool IsRepairNeeded() {
+	public static bool IsRepairNeeded() {
+		// Initialization check
+		if (!IsScriptInitialized) {
+			Initialize();
+		}
 		if (NumItemsBroken() > 0 || getDurability() <= MinDurability) {
-			API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
 			return true;
 		}
 		return false;
@@ -676,7 +714,7 @@ public class Merchant
 	}
 	
 	// Method:		"SellLootedItems(List<int>)"
-	public static void SellLootedItems() {
+	private static void SellLootedItems() {
 		// For future use to sell specific "types" of gear.
 		List<int> itemsToSell = getItemsToSell();
 		string grey = "ff9d9d9d";
@@ -783,7 +821,12 @@ public class Merchant
 	// Method:		"RepairCheck()"
 	// Purpose:		This is the main method to be run on a recursive loop, ideally, or within something
 	public static IEnumerable<int> RepairCheck() {
+		// Initialization check
+		if (!IsScriptInitialized) {
+			Initialize();
+		}
 		if (IsRepairNeeded()) {
+			API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
 			if (closest.Count > 0) {
