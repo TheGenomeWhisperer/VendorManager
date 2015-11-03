@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
-|   Last Update 25th Oct, 2015 */
+|   Last Update Nov. 2nd, 2015 */
 
 
 public class DraenorMerchants {
@@ -19,6 +19,7 @@ public class DraenorMerchants {
 	// 				vendorType represented by numbers 1-3
 	//				1 = Food && Drink
 	//				2 = Repair
+    //              3 = Generic Vendor
 	public static List<object> getMerchantInfo(int zoneID, bool factionIsHorde, int vendorType) {
 			// Default list in case of no result
 			List<object> result = new List<object>();
@@ -77,8 +78,7 @@ public class DraenorMerchants {
     }
 	
 	// Return for all of these will be in the following format (XYZ = V3 coordinates):  List<object> locations = {FPName,X,Y,Z,npcID,bool... FPName,X,Y,Z,npcID, ...)
-    private static List<object> getWarspear(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getWarspear(bool factionIsHorde, int vendorType) {
         List<object> locations = new List<object>();
 		if (factionIsHorde) {
 			// Food & Drink
@@ -90,6 +90,12 @@ public class DraenorMerchants {
 			else if(vendorType == 2) {
 				
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
 		}
         else
 		{
@@ -101,8 +107,7 @@ public class DraenorMerchants {
         return locations;  
     }
 
-    private static List<object> getAshran(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getAshran(bool factionIsHorde, int vendorType) {
 		List<object> locations = new List<object>();
 		if (factionIsHorde) {
 			// Food & Drink
@@ -114,6 +119,12 @@ public class DraenorMerchants {
 			else if(vendorType == 2) {
 				
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
 		}
         else
 		{
@@ -126,8 +137,7 @@ public class DraenorMerchants {
     }
 
 	
-	private static List<object> getTanaan(bool factionIsHorde, int vendorType)
-    {
+	private static List<object> getTanaan(bool factionIsHorde, int vendorType) {
         List<object> locations = new List<object>();
 		if (factionIsHorde) {
 			// Food & Drink
@@ -137,32 +147,51 @@ public class DraenorMerchants {
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){4562.1f, 346.8f, 220.9f, 93178,IsSpecialPathingNeeded};
+                locations.AddRange(rep0);
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                List<object> vend0 = new List<object>(){3309.9f, -1176.7f, 57.9f, 92805,IsSpecialPathingNeeded};
+                locations.AddRange(vend0);
+            }
+            
+            // Both Repair and Food
 		}
         else
 		{
 			// Alliance locations
 		}
-		// Add Neutral locations
-		// All Here...
+		// Add Neutral locations of BOTH Repair and Food
+		List<object> neut0 = new List<object>(){3518.7f, -776.9f, 39.3f, 92069,IsSpecialPathingNeeded};
+        locations.AddRange(neut0);
 		//
         return locations; 
     }
 
-    private static List<object> getSMV(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getSMV(bool factionIsHorde, int vendorType) {
         List<object> locations = new List<object>();
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
-				locations.AddRange(list0);
+				// None Known
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){-1494.6f, 969.0f, 7.4f, 76198,IsSpecialPathingNeeded};
+                locations.AddRange(rep0);
+                
+                if (Merchant.API.Me.Level > 99) {
+                    List<object> rep1 = new List<object>(){-793.3f, -671.3f, 106.8f, 81614,IsSpecialPathingNeeded};
+                    locations.AddRange(rep1);
+                }
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
 		}
         else
 		{
@@ -174,19 +203,43 @@ public class DraenorMerchants {
         return locations; 
     }
 
-    private static List<object> getNagrand(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getNagrand(bool factionIsHorde, int vendorType)  {
         List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
+				List<object> list0 = new List<object>(){3007.7f, 4780.8f, 128.2f,79199,IsSpecialPathingNeeded};
 				locations.AddRange(list0);
+                List<object> list1 = new List<object>(){3218.1f, 4594.8f, 142.8f, 82345,IsSpecialPathingNeeded};
+				locations.AddRange(list1);
+                List<object> list2 = new List<object>(){3128.2f, 6539.9f, 13.1f, 82341,IsSpecialPathingNeeded};
+				locations.AddRange(list2);
+                
+                if (Merchant.API.Me.Level > 99) {
+                    List<object> list3 = new List<object>(){4462.6f, 6144.4f, 107.5f, 85067,IsSpecialPathingNeeded};
+                    locations.AddRange(list3);
+                }
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){3099.9f, 4836.1f, 127.9f, 79310,IsSpecialPathingNeeded};
+                locations.AddRange(rep0);
+                List<object> rep1 = new List<object>(){3218.1f, 4594.8f, 142.8f, 82343,IsSpecialPathingNeeded};
+                locations.AddRange(rep1);
+                if (Merchant.API.Me.Level > 99) {
+                    List<object> rep3 = new List<object>(){4424.3f, 6177.2f, 107.4f, 84902,IsSpecialPathingNeeded};
+                    locations.AddRange(rep3);
+                }
+                
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
+            List<object> both0 = new List<object>(){3118.0f, 6542.6f, 12.9f, 82344, IsSpecialPathingNeeded};
+            locations.AddRange(both0);
 		}
         else
 		{
@@ -198,19 +251,40 @@ public class DraenorMerchants {
         return locations; 
     }
 
-    private static List<object> getSpires(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getSpires(bool factionIsHorde, int vendorType) {
         List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
+				List<object> list0 = new List<object>(){-396.6f, 1869.1f, 51.4f, 86386,IsSpecialPathingNeeded};
 				locations.AddRange(list0);
+                List<object> list1 = new List<object>(){-332.8f, 919.6f, 75.0f, 80777,IsSpecialPathingNeeded};
+				locations.AddRange(list1);
+                List<object> list2 = new List<object>(){-1557.5f, 945.2f, 7.8f, 82516,IsSpecialPathingNeeded};
+				locations.AddRange(list2);
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+                // Axefall Repair Vendors.
+				if (Merchant.API.IsQuestCompleted(35277)) {
+                    List<object> rep0 = new List<object>(){-377.2f, 2241.9f, 26.1f, 82613,IsSpecialPathingNeeded};
+                    locations.AddRange(rep0);
+                    List<object> rep1 = new List<object>(){-353.8f, 2202.4f, 27.7f, 82622,IsSpecialPathingNeeded};
+                    locations.AddRange(rep1);
+                }
+                
+                List<object> rep2 = new List<object>(){-452.2f, 1856.9f, 41.2f, 87775,IsSpecialPathingNeeded};
+                locations.AddRange(rep2);
+                List<object> rep3 = new List<object>(){-1494.6f, 969.0f, 7.4f, 82183,IsSpecialPathingNeeded};
+                locations.AddRange(rep3);
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
+
 		}
         else
 		{
@@ -222,39 +296,86 @@ public class DraenorMerchants {
         return locations;   
     }
 
-    private static List<object> getTalador(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getTalador(bool factionIsHorde, int vendorType) {
         List<object> locations = new List<object>();
+        // Zangarra coordinates
+        Vector3 zang1 = new Vector3(3187.2f, 788.7f, 77.7f);
+        Vector3 zang2 = new Vector3(3035.2f,  954.0f,  105.5f);
+        Vector3 shatt1 = new Vector3(2604.9f, 2797.0f, 242.1f);
+        Vector3 shatt2 = new Vector3(2943.0f, 3351.9f, 53.0f);
+        Vector3 shatt3 = new Vector3(2575.1f, 2825.5f, 245.2f);
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
+				List<object> list0 = new List<object>(){3246.7f, 1558.4f, 162.4f, 81359, IsSpecialPathingNeeded};
 				locations.AddRange(list0);
+                
+                // If player is in Zangarra will these only be added.
+                if (Merchant.API.Me.Distance2DTo(zang1) < 302 && Merchant.API.Me.Distance2DTo(zang2) > 75) {
+                    List<object> list1 = new List<object>(){3173.8f, 764.7f, 81.3f, 80931, IsSpecialPathingNeeded};
+				    locations.AddRange(list1);
+                }
+                
+                // Ensuring only to add the NPCs that are at the Spire of Light since special pathing.
+                if ((Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125) || (Merchant.API.Me.Distance2DTo(shatt3) < 200 && Merchant.API.Me.Position.Z > 225)) {
+                    List<object> list2 = new List<object>(){2605.7f, 2799.3f, 242.2f, 82636, IsSpecialPathingNeeded};
+				    locations.AddRange(list2);
+                }
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){4008.1f, 2128.6f, 117.0f, 77029,IsSpecialPathingNeeded};
+                locations.AddRange(rep0);
+                List<object> rep1 = new List<object>(){3230.2f, 1563.1f, 161.6f, 81359,IsSpecialPathingNeeded};
+                locations.AddRange(rep1);
+                
+                // Only add if in Zangarra
+                if (Merchant.API.Me.Distance2DTo(zang1) < 302 && Merchant.API.Me.Distance2DTo(zang2) > 75) {
+                    List<object> rep2 = new List<object>(){3198.6f, 822.6f, 81.3f, 80930, IsSpecialPathingNeeded};
+				    locations.AddRange(rep2);
+                }
+                // Ensuring only to add the NPCs that are at the Spire of Light since challenging pathing.
+
+                if ((Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125) || (Merchant.API.Me.Distance2DTo(shatt3) < 200 && Merchant.API.Me.Position.Z > 225)) {
+                    List<object> rep3 = new List<object>(){2606.6f, 2812.3f, 242.5f, 82635, IsSpecialPathingNeeded};
+				    locations.AddRange(rep3);
+                    List<object> rep4 = new List<object>(){2659.8f, 2795.4f, 246.2f, 86317, IsSpecialPathingNeeded};
+				    locations.AddRange(rep4);
+                }
+                
+                List<object> rep5 = new List<object>(){2801.6f, 2523.0f, 121.1f, 81093,IsSpecialPathingNeeded};
+                locations.AddRange(rep5);
+                List<object> rep6 = new List<object>(){1754.0f, 2552.6f, 133.7f, 81095,IsSpecialPathingNeeded};
+                locations.AddRange(rep6);
+                List<object> rep7 = new List<object>(){1393.0f, 3289.5f, 133.7f, 81886,IsSpecialPathingNeeded};
+                locations.AddRange(rep7);
 			}
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
+            
 		}
         else
 		{
 			// Alliance locations
 		}
+        
 		// Add Neutral locations
 		// All Here...
 		//
         return locations; 
     }
 
-    private static List<object> getGorgrond(bool factionIsHorde, int vendorType)
-    {
+    private static List<object> getGorgrond(bool factionIsHorde, int vendorType)  {
         List<object> locations = new List<object>();
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
                 
-				List<object> list1 = new List<object>(){};
-				locations.AddRange(list1);
+				// Unable to find any FOOD ONLY vendors.
 			}
 			// Repair
 			else if(vendorType == 2) {
@@ -263,7 +384,12 @@ public class DraenorMerchants {
 				    locations.AddRange(rep0);
                 }
 			}
-            // Both
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
             List<object> both0 = new List<object>(){6597.7f, 1276.3f, 64.7f, 84234, IsSpecialPathingNeeded};
             locations.AddRange(both0);
             if (Merchant.API.Me.Level > 99) {
@@ -327,7 +453,12 @@ public class DraenorMerchants {
                 locations.AddRange(vend7);
                 
 			}
-            //  BOTH
+            // Generic Vendor (No repair, no food)
+            else if(vendorType == 3) {
+                
+            }
+            
+            // Both Repair and Food
             if (GetGarrisonLevel() > 1) {
                 List<object> both0 = new List<object>(){5626.8f, 4629.7f, 139.3f, 76872, IsSpecialPathingNeeded};
                 locations.AddRange(both0);
@@ -348,14 +479,64 @@ public class DraenorMerchants {
 	}
     
     public static List<int> getFood() {
-        List<int> allFood = new List<int>() {115351,115352,115353,115354,115355,117457,117454};
-        // Food IDs
+        int level = Merchant.API.Me.Level;
+        List<int> allFood = new List<int>();
         
+        // Adding all Mana Conjured items to the list (based on % so any level is Good)
+        List<int> mageConjured = new List<int>() {65500,65515,65516,65517,43518,43523,65499};
+        allFood.AddRange(mageConjured);
+        
+        // Draenor Known Food IDs       
+        // Draenor 90+ food
+        if (level > 89 && level < 101) {
+            List<int> draenor = new List<int> {115351,115352,115353,115354,115355,117457,117454,118269,117471,130192,117470,118272,118268,111544,118416,128219,128498,118051,118050,117472,118270,117469,117474,86994,111456};
+            allFood.AddRange(draenor);
+            
+            // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
+            if (!Merchant.API.IsQuestCompleted(34378)) {
+                allFood.Add(112449);
+            }
+            
+            // Higher level Crafted Food
+            if (level > 90) {
+                List<int> draenor2 = new List<int>() {111449,111447,111434,122346,111442,111433,122343,111452,111431,111436,111446,122348,122345,111453,111441,122347,111454,111438,111439,111450,111445,122344,111444,111437,118428,118269};
+                allFood.AddRange(draenor2);
+            }
+        }
+        
+        
+        
+        // Proving grounds only food/drink item: 120293
         return allFood;
     }
     
     public static List<int> getWater() {
-        List<int> allDrinks = new List<int>() {117452,117475};
+        int level = Merchant.API.Me.Level;
+        List<int> allDrinks = new List<int>();
+        
+        // Adding all Mana Conjured items to the list (based on % so any level is Good)
+        List<int> mageConjured = new List<int>() {65500,65515,65516,65517,43518,43523,65499};
+        allDrinks.AddRange(mageConjured);
+        
+        // Draenor Known Drink IDs
+        // Draenor 90+ drinks
+        if (level > 89 && level < 101) {
+            List<int> draenor = new List<int>() {117452,117475,128385,118269,130192,118272,118268,111544,118416,111455,118270,118269};
+            allDrinks.AddRange(draenor);
+            
+            // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
+            if (!Merchant.API.IsQuestCompleted(34378)) {
+                allFood.Add(112449);
+            }
+            
+            // Higher level Crafted drinks
+            if (Merchant.API.Me.Level > 90) {
+                List<int> betterDrinks = new List<int>() {111449,111447,111434,122346,111442,111433,122343,111452,111431,111436,111446,122348,122345,111453,111441,122347,111454,111438,111439,111450,111445,122344,111444,111437,118428};
+                allDrinks.AddRange(betterDrinks);
+            }
+        }
+            
+        
         
         return allDrinks;
     }
@@ -396,92 +577,58 @@ public class DraenorMerchants {
                     yield break;
                 }
                 
-                // Navigate out of Zangarra Properly.
+                // Navigate to vendors if in Zangarra Properly.
                 // LOCATION 2
                 Vector3 zang1 = new Vector3(3187.2f, 788.7f, 77.7f);
                 Vector3 zang2 = new Vector3(3035.2f,  954.0f,  105.5f);
-                if (Merchant.API.Me.Distance2DTo(zang1) < 302 && Merchant.API.Me.Distance2DTo(zang2) > 75)
-                {
-                    Merchant.API.Print("Let's First Get Out of Zangarra!");
+                if (Merchant.API.Me.Distance2DTo(zang1) < 302 && Merchant.API.Me.Distance2DTo(zang2) > 75) {
                     // These quick 'Z' height checks are for some tight turns the mesh sometimes handles poorly.
-                    if (Merchant.API.Me.Position.Z < 17)
-                    {
+                    if (Merchant.API.Me.Position.Z < 17) {
                         Vector3 zang3 = new Vector3(3316.2f, 950.4f, 17.4f);
-                        while(!Merchant.API.MoveTo(zang3))
-                        {
+                        while(!Merchant.API.MoveTo(zang3)) {
                             yield return 100;
                         }
                     }
-                    if (Merchant.API.Me.Position.Z < 32)
-                    {
+                    if (Merchant.API.Me.Position.Z < 32) {
                         Vector3 zang4 = new Vector3(3286.9f, 1013.4f, 38.1f);
-                        while(!Merchant.API.MoveTo(zang4))
-                        {
+                        while(!Merchant.API.MoveTo(zang4)) {
                             yield return 100;
                         }
                     }
-                    if (Merchant.API.Me.Position.Z < 44)
-                    {
+                    if (Merchant.API.Me.Position.Z < 44) {
                         Vector3 zang5 = new Vector3(3206.1f, 918.8f, 42.2f);
-                        while(!Merchant.API.MoveTo(zang5))
-                        {
+                        while(!Merchant.API.MoveTo(zang5)) {
                             yield return 100;
                         }
                     }
-                    Vector3 zang6 = new Vector3(3198.8f, 836.9f, 83.2f);
-                    while(!Merchant.API.MoveTo(zang6))
-                    {
+                    Vector3 zang6 = new Vector3(3184.1f, 818.7f, 80.2f);
+                    while(!Merchant.API.MoveTo(zang6)) {
                         yield return 100;
                     }
-                    // Brief pause for aggro
-                    yield return 2500;
-                    Vector3 zang7 = new Vector3(3199.5f, 843.6f, 84.3f);
-                    
-                    while (Merchant.API.Me.Distance2DTo(zang7) < 30)
-                    {
-                        foreach (var unit in Merchant.API.GameObjects)
-                        {
-                            if (unit.EntryID == 230874)
-                            {
-                                while(!Merchant.API.MoveTo(unit.Position))
-                                {
-                                    yield return 100;
-                                }
-                                unit.Interact();
-                                yield return 10000;
-                            }
-                        }
-                    }
-                    Merchant.API.Print("Alright, Let's Continue!");
                     yield break;
                 }
                 
                 // Navigate out of Voljin's Pride Arsenal
                 // LOCATION 3
                 Vector3 arsenal = new Vector3(3217.1f, 1606.4f, 166.1f);
-                if (Merchant.API.Me.Distance2DTo(arsenal) < 15)
-                {
-                    while(!Merchant.API.CTM(3226.4f, 1600.0f, 166.0f))
-                    {
+                if (Merchant.API.Me.Distance2DTo(arsenal) < 15) {
+                    while(!Merchant.API.CTM(3226.4f, 1600.0f, 166.0f)) {
                         yield return 100;
                     }
-                    while(!Merchant.API.CTM(3241.7f, 1589.6f, 163.2f))
-                    {
+                    while(!Merchant.API.CTM(3241.7f, 1589.6f, 163.2f)) {
                         yield return 100;
                     }
                     yield break;
                 }
                 
-                // Navigational pathing too Shattrath City Spire Flightpath.
+                // Navigational pathing to Shattrath City Spire Flightpath.
                 // LOCATION 4
                 Vector3 shatt1 = new Vector3(2604.9f, 2797.0f, 242.1f);
                 Vector3 shatt2 = new Vector3(2943.0f, 3351.9f, 53.0f);
-                if (Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125)
-                {
+                if (Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125) {
                     Merchant.API.Print("Let's Move out of Shattrath. The elevator in the Sha'tari Market District Looks Good...");
                     var check = new Fiber<int>(TakeElevator(231934,7,2687.2f,3017.5f,69.5f,2682.8f,2995.0f,233.9f));
-                    while (check.Run())
-                    {
+                    while (check.Run()) {
                         yield return 100;
                     }
                     Merchant.API.Print("Let's Get to that Flightpath and Get Out of Here!");
@@ -495,17 +642,14 @@ public class DraenorMerchants {
             // ASHRAN SPECIAL PATHING!
             //
             // BEGIN
-            if (zoneID == 6941 || zoneID == 7548)
-            {
+            if (zoneID == 6941 || zoneID == 7548) {
                 Merchant.API.Print("Woah! Let's Get Out of Ashran Before Some Alliance Find You!");
                 Vector3 ash = new Vector3(5090.1f, -3982.3f, 20.8f);
-                while(!Merchant.API.MoveTo(ash))
-                {
+                while(!Merchant.API.MoveTo(ash)) {
                     yield return 100;
                 }
                 Vector3 ash2 = new Vector3(5141.9f, -3964.1f, 2.2f);
-                while(!Merchant.API.MoveTo(ash2))
-                {
+                while(!Merchant.API.MoveTo(ash2)) {
                     yield return 100;
                 }
                 yield break;
@@ -523,8 +667,7 @@ public class DraenorMerchants {
     // What it Does:    Returns the current rank of the player garrison, 1-3
     // Purpose:         When dealing with various pathing at the Garrison, it is important to note that object
     //                  location often varies based on the level and size of the ggarrison. This helps filter it all.
-    public static int GetGarrisonLevel()
-    {
+    public static int GetGarrisonLevel() {
         return Merchant.API.ExecuteLua<int>("local level = C_Garrison.GetGarrisonInfo(); return level;");
     }
 	
@@ -536,8 +679,7 @@ public class DraenorMerchants {
     //                  Also, the position you would like the player to exit the elevator and travel to.  The travel time
     //                  was kind of a rough solution because it appears that while on the elevator, the API freezes all return values
     //                  thus I cannot seem to get an accurate positional check, so the timing allows me to enter, then determine exit time.
-    public static IEnumerable<int> TakeElevator(int ElevatorID, int elevatorTravelTime, float startX, float startY, float startZ, float x, float y, float z) 
-    {
+    public static IEnumerable<int> TakeElevator(int ElevatorID, int elevatorTravelTime, float startX, float startY, float startZ, float x, float y, float z)  {
         double position;
         double position2;
         bool elevatorFound = false;
@@ -560,10 +702,18 @@ public class DraenorMerchants {
                 // or it could mess up the passing as the bot remembers its last spot before combat starts then returns to it
                 Merchant.API.DisableCombat = true;
                 Merchant.API.Print("Waiting For the Elevator...");
+                
+                // Checking initial position of the elevator.
                 position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
                 yield return 100;
                 position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
                 yield return 100;
+                
+                // Some Added Redundancy to not attempt to take the elevator if it just arrived
+                // Lest you try to hop on right before it moves away.
+                while (Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit)) <= 20.0) {
+                    yield return 100;
+                }
                 
                 // The two positional checks right after each other are to determine movement of the elevator.
                 // if they are equal, elevator is not moving, but if they are different, like the second location is further than the first,
@@ -634,4 +784,5 @@ public class DraenorMerchants {
 }
 
 
-// Create a method that returns BOTH vendor types
+// Create a method that returns ALL vendor types
+// All previous zones before nagrand need generic vendors added
