@@ -10,24 +10,9 @@
 public class Merchant
 {
 	// All Instance Variables
-	// Initialization boolean check before all PUBLIC available API for error prevention on use of API. (Fool-proofing).
-	private static bool IsScriptInitialized = false;
-	
-	// List of all potential food/drink items good for
-	private static List<int> DrinkIDs;
-	private static List<int> FoodIDs;
-	
-	// List of all food items and drink items on the given vendor.
-	private static List<int> vendorDrinks;
-	private static List<int> vendorFood;
-	
-	// List of Arrays, containing in position 0, item ID Number; position 1, quantity owned in bags.
-	private static List<int[]> InventoryFood;
-	private static List<int[]> InventoryWater;
-	
-	// Eventual ID of the food/water player will purchase from the vendor.
-	private static int FoodIDToBuy;
-	private static int DrinkIDToBuy;
+	// Rebot API Access and Integration
+	public static ReBotAPI API;
+    public static Fiber<int> Fib;
 	
 	// Max amount of food/water to hold, easily adjustable
 	public static int FoodCap = 25;
@@ -38,23 +23,56 @@ public class Merchant
 	public static int MinWater = 2;
 	
 	// Repair information
-	public static int MinDurability = 90;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
+	public static int MinDurability = 20;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
 	
-	// Rebot API Access and Integration
-	public static ReBotAPI API;
-    public static Fiber<int> Fib;
+	// Once the bag has this few of slots it will go Vendor goods.
+	public static int MinFreeSlots = 3;
+		
+	// Initialization boolean check before all PUBLIC available API for error prevention on use of API. (Fool-proofing).
+	public static bool IsScriptInitialized = false;
+	public static int CurrentZoneID;
 	
+	// List of all potential food/drink items good for
+	public static List<int> DrinkIDs = new List<int>();
+	public static List<int> FoodIDs = new List<int>();
+	
+	// List of all food items and drink items on the given vendor.
+	public static List<int> vendorDrinks;
+	public static List<int> vendorFood;
+	
+	// List of Arrays, containing in position 0, item ID Number; position 1, quantity owned in bags.
+	public static List<int[]> InventoryFood;
+	public static List<int[]> InventoryWater;
+	
+	// Eventual ID of the food/water player will purchase from the vendor.
+	public static int FoodIDToBuy;
+	public static int DrinkIDToBuy;
+	
+
     // Default Constructor
     public Merchant() {}
+	
+	
+	
+	///////////////////////////////////////////
+	/////							      /////
+	/////      All Methods Related to     /////
+	/////      Food/Water Restocking      /////
+	/////								  /////
+	///////////////////////////////////////////
+	
+	
 	
 	// Method:		"InitializeMerchant()"
 	// 				Helps Reduce overhead so only need to initialize the one time.
 	//				THIS NEEDS TO BE RUN AT THE VERY BEGINNING OF ALL PROFILES JUST ONCE!!! ("Merchant.Initialize();")
+	//				Also note, this is only to be used initially if not changing zones... leave this alone if you are going to be dynamic in use and it will
+	//				be automatically initialized.
 	public static void Initialize() {
 		IsScriptInitialized = true;
+		CurrentZoneID = API.Me.ZoneId;
 		// Continent Selection
-		FoodIDs = new List<int>();
-		DrinkIDs = new List<int>();
+		
 		if (API.Me.ContinentID == 1116) {
 			FoodIDs = DraenorMerchants.getFood();
 			DrinkIDs = DraenorMerchants.getWater();
@@ -68,6 +86,47 @@ public class Merchant
 		// Ensure all food/drink items in inventory are established to be used.
 		setUsableFood();
 		setUsableWater();
+	}
+	
+	// Method:			"BlacklistNPC(int)"
+	// 					Uses the NPCs default List "GlobalBotSettings.DestroyItemIds" as a collection of NPCs RemoveBlacklistedVendors
+	//					So as to not conflict them with actual items to be stored, I store their NPC ID on a multiple of 20, thus it remains in the list, but is hidden.
+	//					In other words:        BlaclistID = EntryID * 20; And, then it is stored.
+	private static void BlacklistNPC(int npcID) {
+		int blacklistID = npcID * 20;
+		int count = 0;
+		// verify not adding a duplicate
+		foreach (int id in API.GlobalBotSettings.DestroyItemIds) {
+			if (id == blacklistID) {
+				count++;
+				break;
+			}
+		}
+		// if no match was found
+		if (count == 0) {
+			API.GlobalBotSettings.DestroyItemIds.Add(blacklistID);
+		}
+	}
+	
+	// This returns the list of all available zone NPCs and the removes the ones that are matched to the blacklist.
+	private static List<object> RemoveBlacklistedVendors(List<object> vendorNPCs) {
+		// If both Lists are not empty, so as not to waste time parsing.
+		int id;
+		if (API.GlobalBotSettings.DestroyItemIds.Count > 0 && vendorNPCs.Count > 0) {
+			for (int i = 0; i < vendorNPCs.Count - 4; i = i + 5) {
+				foreach (int blacklistID in API.GlobalBotSettings.DestroyItemIds) {
+					id = blacklistID / 20;
+					if (id == (int) vendorNPCs[i+3]) {
+						// match found... removing object.
+						for (int j = 0; j < 5; j++) {
+							vendorNPCs.RemoveAt(i);
+						}
+						i = i - 5;
+					}
+				}
+			}
+		}
+		return vendorNPCs;
 	}
 	
 	// Method:			"getFoodInInventory()"
@@ -181,7 +240,8 @@ public class Merchant
 	
 	public static bool IsFoodOrDrinkNeeded(int numMinimumFood, int numMinimumWater) {
 		// Initialization check
-		if (!IsScriptInitialized) {
+		// If I have changed zones, re-initialize.
+		if (API.Me.ZoneId != CurrentZoneID) {
 			Initialize();
 		}
 		// Now, finding all food and drinks in my bags that much these known items to use, and counting how many in possession.
@@ -225,7 +285,7 @@ public class Merchant
         return vendor;
 	}
 	
-	private static List<int> getMerchantFoodList() {
+	private static List<int> getMerchantFoodList() {;
 		List<int> items = new List<int>();
 		if (IsVendorOpen()) {
 			string itemID;
@@ -332,7 +392,7 @@ public class Merchant
         
         // Edging closer to the Merchant!
 		// Dismounting First!
-		Merchant.API.Dismount();
+		API.Dismount();
         while(API.Me.Focus != null && !API.MoveTo(API.Me.Focus.Position)) {
             yield return 100;
         }
@@ -343,7 +403,50 @@ public class Merchant
         List<object> result = new List<object>();
 		
 		// Obtaining the List with the NPC info and location.
-		vendor = getVendorInfo(TypeofMerchant);
+		// Also Blacklists any known problem NPCs
+		vendor = RemoveBlacklistedVendors(getVendorInfo(TypeofMerchant));
+		
+		if (vendor.Count != 0) {
+			float closestDistance;
+			float tempDistance;
+			int npcID;
+			bool IsSpecialPathingNeeded;
+			Vector3 closestVector3;
+			Vector3 position;
+		
+			// Setting the initial Merchant to the closest distance
+			closestVector3 = new Vector3((float)vendor[0], (float)vendor[1], (float)vendor[2]);
+			closestDistance = API.Me.Distance2DTo(closestVector3);
+			npcID = (int)vendor[3];
+			IsSpecialPathingNeeded = (bool)vendor[4];
+			
+			// Filtering for Closest Merchant now.
+			for (int i = 0; i < vendor.Count - 4; i = i + 5) {
+				// Setting first values
+				position = new Vector3((float)vendor[i], (float)vendor[i + 1], (float)vendor[i + 2]);
+				tempDistance = API.Me.Distance2DTo(position);
+				// Changing values if new ones are closer
+				if (tempDistance < closestDistance) {
+					closestDistance = tempDistance;
+					closestVector3 = position;
+					npcID = (int)vendor[i+3];
+					IsSpecialPathingNeeded = (bool)vendor[i+4];
+				}
+			}
+			 // Creating list with the Vector3 position of closest Merchant, and food list and water list on the end.
+            List<object> final = new List<object>(){closestVector3,closestDistance,npcID,IsSpecialPathingNeeded};
+            result.AddRange(final);
+		}
+		return result;		
+	}
+	
+	private static List<object> GetClosestMerchant(List<object> allVendors) {
+		List<object> vendor = new List<object>();
+        List<object> result = new List<object>();
+		
+		// Obtaining the List with the NPC info and location.
+		// Also Blacklists any known problem NPCs
+		vendor = allVendors;
 		
 		if (vendor.Count != 0) {
 			float closestDistance;
@@ -386,7 +489,6 @@ public class Merchant
 				API.Me.Focus.Interact();
 				yield return 1500;
 				if (!IsVendorOpen()) {
-					API.Print("test");
 					MerchantGossip();
 					yield return 2000;
 				}
@@ -535,9 +637,16 @@ public class Merchant
 			}
 			total = max - highest;
 		}
-		else {
+		else if (vendorFood.Count > 0) {
 			total = FoodCap;
 			FoodIDToBuy = vendorFood[0];
+		}
+		else {
+			API.Print("No Food Items Found on Vendor to Purchase. Blacklisting this NPC in the future!");
+			if (API.Me.Focus != null) {
+				BlacklistNPC(API.Me.Focus.EntryID);
+			}
+			total = 0;
 		}
 		return total;
 	}
@@ -566,9 +675,16 @@ public class Merchant
 			}
 			total = max - highest;
 		}
-		else {
+		else if (vendorDrinks.Count > 0) {
 			total = DrinkCap;
 			DrinkIDToBuy = vendorDrinks[0];
+		}
+		else {
+			API.Print("No Drink Items Found on Vendor to Purchase. Blacklisting this NPC in the future!");
+			if (API.Me.Focus != null) {
+				BlacklistNPC(API.Me.Focus.EntryID);
+			}
+			total = 0;
 		}
 		return total;
 	}
@@ -576,31 +692,30 @@ public class Merchant
 	// Method:		"BuyDrink()"
 	private static IEnumerable<int> BuyDrink(int max) {
 		int totalToBuy = MaxDrinkToBuy(max);
-		if (totalToBuy < 1) {
-			totalToBuy = 0;
-		}
-		int BuyTwenty = totalToBuy / 20;
-		int remainder = totalToBuy % 20;
-		// parsing through vendor
-		string itemID;
-		string temp;
-		int ID;
-		for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
-			itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
-			temp = itemID.Substring(itemID.IndexOf(':') + 1);
-			itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
-			ID = int.Parse(itemID);
-			if (DrinkIDToBuy == ID) {
-				// j = Multiples of 20
-				for (int j = 0; j < BuyTwenty; j++) {
-					API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
-					yield return 500;
+		if (totalToBuy != 0) {
+			int BuyTwenty = totalToBuy / 20;
+			int remainder = totalToBuy % 20;
+			// parsing through vendor
+			string itemID;
+			string temp;
+			int ID;
+			for (int i = 1; i < API.ExecuteLua<int>("return GetMerchantNumItems()"); i++) {
+				itemID = API.ExecuteLua<string>("return GetMerchantItemLink(" + i + ");");
+				temp = itemID.Substring(itemID.IndexOf(':') + 1);
+				itemID = itemID.Substring(itemID.IndexOf(':') + 1, temp.IndexOf(':'));
+				ID = int.Parse(itemID);
+				if (DrinkIDToBuy == ID) {
+					// j = Multiples of 20
+					for (int j = 0; j < BuyTwenty; j++) {
+						API.ExecuteLua("BuyMerchantItem(" + i + ", 20)");
+						yield return 500;
+					}
+					if (remainder > 0) {
+						API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
+						yield return 500;
+					}
+					yield break;
 				}
-				if (remainder > 0) {
-					API.ExecuteLua("BuyMerchantItem(" + i + "," + remainder + ")");
-					yield return 500;
-				}
-				yield break;
 			}
 		}
 		yield break;
@@ -608,15 +723,16 @@ public class Merchant
 			
 	public static IEnumerable<int> RestingCheck() {
 		// Initialization check
-		if (!IsScriptInitialized) {
+		// If I have changed zones, re-initialize.
+		if (API.Me.ZoneId != CurrentZoneID) {
 			Initialize();
 		}
 		// Initialize the Script and pulls all info from appropriate pathing
 		// Determins if necessary to start resting Script.
 		if (IsFoodOrDrinkNeeded(MinFood,MinWater)) {
-			API.Print("Player is Low on Refreshments! Heading to Restock!!!");
 			List<object> closest = GetClosestMerchant(1);
 			if (closest.Count > 0) {
+				API.Print("Player is Low on Refreshments! Heading to Restock!!!");
 				// Identifying Merchant and moving to it.
 				var check = new Fiber<int>(MoveToMerchant(closest));
 				while (check.Run()) {
@@ -628,7 +744,6 @@ public class Merchant
 				while (check2.Run()) {
 					yield return 100;
 				}
-				
 				// Buy Water if Needed
 				if (API.Me.Class.ToString().Equals("Paladin") || API.Me.Class.ToString().Equals("Priest") || API.Me.Class.ToString().Equals("Shaman") || API.Me.Class.ToString().Equals("Mage") || 
 				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk") || API.Me.Class.ToString().Equals("Hunter")) {
@@ -682,7 +797,8 @@ public class Merchant
 	//				20% or less equals
 	public static bool IsRepairNeeded() {
 		// Initialization check
-		if (!IsScriptInitialized) {
+		// If I have changed zones, re-initialize.
+		if (API.Me.ZoneId != CurrentZoneID) {
 			Initialize();
 		}
 		if (NumItemsBroken() > 0 || getDurability() <= MinDurability) {
@@ -822,14 +938,109 @@ public class Merchant
 	// Purpose:		This is the main method to be run on a recursive loop, ideally, or within something
 	public static IEnumerable<int> RepairCheck() {
 		// Initialization check
-		if (!IsScriptInitialized) {
+		// If I have changed zones, re-initialize.
+		if (API.Me.ZoneId != CurrentZoneID) {
 			Initialize();
 		}
 		if (IsRepairNeeded()) {
-			API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
 			if (closest.Count > 0) {
+				API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+				// Identifying Merchant and moving to it.
+				var check = new Fiber<int>(MoveToMerchant(closest));
+				while (check.Run()) {
+					yield return 100;
+				}
+				
+				// Interacting with Merchant
+				var check2 = new Fiber<int>(InteractWithMerchant());
+				while (check2.Run()) {
+					yield return 100;
+				}
+				
+				// Clearing our Loot first
+				SellLootedItems();
+				
+				// Repairing
+				Repair();
+				
+				API.ExecuteLua("CloseMerchant()");
+			}
+		}
+		yield break;
+	}
+	
+	
+	///////////////////////////////////////////
+	/////							      /////
+	/////     All Methods 4 Vendoring     /////
+	/////								  /////
+	///////////////////////////////////////////
+	
+	
+	// Method:				"InventoryIsFull"
+	// Purpose:				Returns true if the number of free slots in your bag is equal to or less Thank
+	//						the given minNumFreeSlots
+	public static bool InventoryIsFull() {
+		if (API.GetFreeBagSlots() >= MinFreeSlots) {
+			return false;
+		}
+	  	return true;
+	}
+	
+	private static List<object> getAllVendors() {
+		List<object> allOfEm = new List<object>();
+		
+		// Combine all possible vendor types
+		allOfEm = getVendorInfo(1);
+		allOfEm.AddRange(getVendorInfo(2));
+		allOfEm.AddRange(getVendorInfo(3));
+		
+		// Remove any duplicates
+		int numInstances;
+		int id = 0;
+		List<object> copy = allOfEm;
+		if (allOfEm.Count > 0) {
+			for (int i = 0; i < allOfEm.Count - 4; i = i + 5) {
+				numInstances = 0;
+				for (int j = 0; j < copy.Count - 4; j = j + 5) {
+					if ((int) allOfEm[i+3] == (int) copy[j+3]) {
+						// match found, removing
+						numInstances++;
+					}
+					if (numInstances > 1 && numInstances < 3) {
+						id = (int) allOfEm[j+3];
+					}
+				}
+				if (numInstances > 1) {
+					for (int j = allOfEm.Count - 5; j >= 4; j = j - 5) {
+						if (numInstances > 1) {
+							if ((int) allOfEm[j+3] == id) {
+								for (int k = 0; k < 5; k++) {
+									allOfEm.RemoveAt(j);
+								}
+								numInstances--;
+							}
+						}
+					}
+				}
+			}
+		}
+		return allOfEm;
+	}
+
+	public static IEnumerable<int> InventoryCheck() {
+		// Initialization check
+		// If I have changed zones, re-initialize.
+		if (API.Me.ZoneId != CurrentZoneID) {
+			Initialize();
+		}
+		if (InventoryIsFull()) {
+			// The number 2 returns a list of known Repair Vendors, and their locations.
+			List<object> closest = GetClosestMerchant(getAllVendors());
+			if (closest.Count > 0) {
+				API.Print("Player Needs to Clear His Bags.  Heading to nearest Vendor!");
 				// Identifying Merchant and moving to it.
 				var check = new Fiber<int>(MoveToMerchant(closest));
 				while (check.Run()) {
