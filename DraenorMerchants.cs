@@ -64,7 +64,6 @@ public class DraenorMerchants {
 
             // Ashran (and mine)
             if (zoneID == 6941 || zoneID == 7548) {
-                IsSpecialPathingNeeded = true;
                 return getAshran(factionIsHorde,vendorType);
             }
 
@@ -83,12 +82,13 @@ public class DraenorMerchants {
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
+				List<object> list0 = new List<object>(){5307.4f, -3955.0f, 19.8f,86046,IsSpecialPathingNeeded};
 				locations.AddRange(list0);
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){5257.8f, -3931.4f, 17.7f,89281,IsSpecialPathingNeeded};
+				locations.AddRange(rep0);
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
@@ -112,12 +112,12 @@ public class DraenorMerchants {
 		if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-				List<object> list0 = new List<object>(){};
-				locations.AddRange(list0);
+				// None Known
 			}
 			// Repair
 			else if(vendorType == 2) {
-				
+				List<object> rep0 = new List<object>(){5027.2f, -4175.4f, 46.6f,82882,IsSpecialPathingNeeded};
+				locations.AddRange(rep0);
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
@@ -180,10 +180,14 @@ public class DraenorMerchants {
 			else if(vendorType == 2) {
 				List<object> rep0 = new List<object>(){-1494.6f, 969.0f, 7.4f, 76198,IsSpecialPathingNeeded};
                 locations.AddRange(rep0);
+                List<object> rep1 = new List<object>(){1570.3f, -4.7f, 55.8f, 84907,IsSpecialPathingNeeded};
+                locations.AddRange(rep1);
+                List<object> rep3 = new List<object>(){1192.3f, -1800.8f, 37.3f, 84907,IsSpecialPathingNeeded};
+                locations.AddRange(rep3);
                 
                 if (Merchant.API.Me.Level > 99) {
-                    List<object> rep1 = new List<object>(){-793.3f, -671.3f, 106.8f, 81614,IsSpecialPathingNeeded};
-                    locations.AddRange(rep1);
+                    List<object> rep2 = new List<object>(){-793.3f, -671.3f, 106.8f, 81614,IsSpecialPathingNeeded};
+                    locations.AddRange(rep2);
                 }
 			}
             // Generic Vendor (No repair, no food)
@@ -226,10 +230,16 @@ public class DraenorMerchants {
                 locations.AddRange(rep0);
                 List<object> rep1 = new List<object>(){3218.1f, 4594.8f, 142.8f, 82343,IsSpecialPathingNeeded};
                 locations.AddRange(rep1);
+                
                 if (Merchant.API.Me.Level > 99) {
                     List<object> rep3 = new List<object>(){4424.3f, 6177.2f, 107.4f, 84902,IsSpecialPathingNeeded};
                     locations.AddRange(rep3);
                 }
+                
+                List<object> rep4 = new List<object>(){3343.3f, 6465.7f, 17.3f, 87396,IsSpecialPathingNeeded};
+                locations.AddRange(rep4);
+                List<object> rep5 = new List<object>(){3421.9f, 7359.3f, 11.1f, 88137,IsSpecialPathingNeeded};
+                locations.AddRange(rep5);
                 
 			}
             // Generic Vendor (No repair, no food)
@@ -262,6 +272,8 @@ public class DraenorMerchants {
 				locations.AddRange(list1);
                 List<object> list2 = new List<object>(){-1557.5f, 945.2f, 7.8f, 82516,IsSpecialPathingNeeded};
 				locations.AddRange(list2);
+                List<object> list3 = new List<object>(){-668.6f, 2416.1f, 34.3f, 82432,IsSpecialPathingNeeded};
+				locations.AddRange(list3);
 			}
 			// Repair
 			else if(vendorType == 2) {
@@ -277,13 +289,19 @@ public class DraenorMerchants {
                 locations.AddRange(rep2);
                 List<object> rep3 = new List<object>(){-1494.6f, 969.0f, 7.4f, 82183,IsSpecialPathingNeeded};
                 locations.AddRange(rep3);
+                List<object> rep4 = new List<object>(){-643.4f, 1538.2f, 36.5f, 88045,IsSpecialPathingNeeded};
+                locations.AddRange(rep4);
+                List<object> rep5 = new List<object>(){-2354.5f, 1138.1f, 23.1f, 82182,IsSpecialPathingNeeded};
+                locations.AddRange(rep5);
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
-                
+                List<object> generic0 = new List<object>(){-670.6f, 2414.9f, 34.3f, 82156,IsSpecialPathingNeeded};
+                locations.AddRange(generic0);
             }
             
             // Both Repair and Food
+            
 
 		}
         else
@@ -321,6 +339,9 @@ public class DraenorMerchants {
                     List<object> list2 = new List<object>(){2605.7f, 2799.3f, 242.2f, 82636, IsSpecialPathingNeeded};
 				    locations.AddRange(list2);
                 }
+                
+                List<object> list3 = new List<object>(){1215.5f, 3041.8f, 133.7f, 81742, IsSpecialPathingNeeded};
+				locations.AddRange(list3);
 			}
 			// Repair
 			else if(vendorType == 2) {
@@ -334,8 +355,8 @@ public class DraenorMerchants {
                     List<object> rep2 = new List<object>(){3198.6f, 822.6f, 81.3f, 80930, IsSpecialPathingNeeded};
 				    locations.AddRange(rep2);
                 }
+                
                 // Ensuring only to add the NPCs that are at the Spire of Light since challenging pathing.
-
                 if ((Merchant.API.Me.Level > 99 && Merchant.API.Me.Distance2DTo(shatt2) < 430 && Merchant.API.Me.Position.Z < 125) || (Merchant.API.Me.Distance2DTo(shatt3) < 200 && Merchant.API.Me.Position.Z > 225)) {
                     List<object> rep3 = new List<object>(){2606.6f, 2812.3f, 242.5f, 82635, IsSpecialPathingNeeded};
 				    locations.AddRange(rep3);
@@ -349,10 +370,12 @@ public class DraenorMerchants {
                 locations.AddRange(rep6);
                 List<object> rep7 = new List<object>(){1393.0f, 3289.5f, 133.7f, 81886,IsSpecialPathingNeeded};
                 locations.AddRange(rep7);
+                List<object> rep8 = new List<object>(){1541.2f, 2220.5f, 139.0f, 81951,IsSpecialPathingNeeded};
+                locations.AddRange(rep8);
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
-                
+                // No Just plain generic vendors found
             }
             
             // Both Repair and Food
@@ -374,8 +397,10 @@ public class DraenorMerchants {
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
-                
-				// Unable to find any FOOD ONLY vendors.
+                if (Merchant.API.Me.Level > 99) {
+                    List<object> list0 = new List<object>(){8373.6f, 84.4f, 79.6f, 86994,IsSpecialPathingNeeded};
+                    locations.AddRange(list0);
+                }
 			}
 			// Repair
 			else if(vendorType == 2) {
@@ -383,10 +408,14 @@ public class DraenorMerchants {
                     List<object> rep0 = new List<object>(){5779.6f, 1287.2f, 107.5f,82732,IsSpecialPathingNeeded};
 				    locations.AddRange(rep0);
                 }
+                if (Merchant.API.Me.Level > 99) {
+                    List<object> rep1 = new List<object>(){8395.8f, 80.2f, 80.0f, 86998,IsSpecialPathingNeeded};
+                    locations.AddRange(rep1);
+                }
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
-                
+                // Unable to identify
             }
             
             // Both Repair and Food
@@ -455,7 +484,7 @@ public class DraenorMerchants {
 			}
             // Generic Vendor (No repair, no food)
             else if(vendorType == 3) {
-                
+                // Unable to find generic vendors (probably some in garrison but not needed to be included.
             }
             
             // Both Repair and Food
@@ -526,7 +555,7 @@ public class DraenorMerchants {
             
             // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
             if (!Merchant.API.IsQuestCompleted(34378)) {
-                allFood.Add(112449);
+                allDrinks.Add(112449);
             }
             
             // Higher level Crafted drinks
@@ -631,29 +660,12 @@ public class DraenorMerchants {
                     while (check.Run()) {
                         yield return 100;
                     }
-                    Merchant.API.Print("Let's Get to that Flightpath and Get Out of Here!");
+                    Merchant.API.Print("Let's Get to that Vendor and Get Out of Here!");
                     yield break;
                 }
                 yield break;     
             }
             // End Talador
-            
-            
-            // ASHRAN SPECIAL PATHING!
-            //
-            // BEGIN
-            if (zoneID == 6941 || zoneID == 7548) {
-                Merchant.API.Print("Woah! Let's Get Out of Ashran Before Some Alliance Find You!");
-                Vector3 ash = new Vector3(5090.1f, -3982.3f, 20.8f);
-                while(!Merchant.API.MoveTo(ash)) {
-                    yield return 100;
-                }
-                Vector3 ash2 = new Vector3(5141.9f, -3964.1f, 2.2f);
-                while(!Merchant.API.MoveTo(ash2)) {
-                    yield return 100;
-                }
-                yield break;
-            }
             
             // Enter any additional pathing.
             yield break;
