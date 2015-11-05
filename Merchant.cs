@@ -15,8 +15,8 @@ public class Merchant
     public static Fiber<int> Fib;
 	
 	// Max amount of food/water to hold, easily adjustable
-	public static int FoodCap = 25;
-	public static int DrinkCap = 25;
+	public static int FoodCap = 100;
+	public static int DrinkCap = 50;
 	
 	// Min amount of food/water to possess before activating vendor logic again.
 	public static int MinFood = 2;
@@ -27,7 +27,10 @@ public class Merchant
 	
 	// Once the bag has this few of slots it will go Vendor goods.
 	public static int MinFreeSlots = 3;
-		
+	
+	// Once Bags are Full and No items are part of a list to be vendored, rather than rechecking the vendor constantly, this disables rechecking. This can also manually disable Vendor action.
+	public static bool IgnoreVendor = false;
+	
 	// Initialization boolean check before all PUBLIC available API for error prevention on use of API. (Fool-proofing).
 	public static bool IsScriptInitialized = false;
 	public static int CurrentZoneID;
@@ -255,7 +258,8 @@ public class Merchant
 		if (highestAmount < numMinimumFood) {
 			return true;
 		}
-		else {
+		else if (API.Me.Class.ToString().Equals("Paladin") || API.Me.Class.ToString().Equals("Priest") || API.Me.Class.ToString().Equals("Shaman") || API.Me.Class.ToString().Equals("Mage") || 
+				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk")) {
 			int highestAmountWater = 0;
 			foreach(int[] drinkAmount in InventoryWater) {
 				if (highestAmountWater < drinkAmount[1]) {
@@ -746,7 +750,7 @@ public class Merchant
 				}
 				// Buy Water if Needed
 				if (API.Me.Class.ToString().Equals("Paladin") || API.Me.Class.ToString().Equals("Priest") || API.Me.Class.ToString().Equals("Shaman") || API.Me.Class.ToString().Equals("Mage") || 
-				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk") || API.Me.Class.ToString().Equals("Hunter")) {
+				API.Me.Class.ToString().Equals("Warlock") || API.Me.Class.ToString().Equals("Druid") || API.Me.Class.ToString().Equals("Monk")) {
 					var check3 = new Fiber<int>(BuyDrink(DrinkCap));
 					while (check3.Run()) {
 						yield return 100;
@@ -783,7 +787,7 @@ public class Merchant
 	
 	///////////////////////////////////////////
 	/////							      /////
-	/////   ALL SELLING/VENDOR METHODS    /////
+	/////   ALL SELLING/REPAIR METHODS    /////
 	/////								  /////
 	///////////////////////////////////////////
 	
@@ -841,7 +845,6 @@ public class Merchant
 		
 		if (IsVendorOpen()) {
 			// Sell Grey Items
-			API.Print("Selling Any \"junk\" items in your Inventory.");
 			API.ExecuteMacro("/run for b=0,4 do for s=1,GetContainerNumSlots(b)do local n=GetContainerItemLink(b,s)if n and strfind(n,\"" + grey + "\") then print(\"Selling \"..n) UseContainerItem(b,s)end end end");
 			
 			// Sell All "Looted Items"
@@ -934,6 +937,43 @@ public class Merchant
 		return false;
 	}
 	
+	// Method:			"HasRepairMount();
+	// Purpose:			return true if you have any of the repair mounts.
+	private static bool HasRepairMount() {
+		// Traveler's Tundra or
+		if (API.HasMount(61447) || API.HasMount(122708)) {
+			return true;
+		}
+		return false;
+	}
+	
+	// Method:			"UseRepairMount()"
+	// Purpose:			To save time it uses either the Traveler's Tundra Mount or the Grand Expedition Yak
+	//					to access a vendor.
+	private static void UseRepairMount() {
+		int tundra = 61447;
+		int yak = 122708;
+		if (API.ExecuteLua<bool>("return IsOutdoors();")) {
+			if (API.HasMount(tundra)) {
+				API.Print("Player is Using the Traveler's Tundra to Access Vendor!");
+				// No need to use if already on the mounts.
+				if (!API.HasAura(tundra)) {
+					API.SummonMount(tundra);
+				}
+				
+			}
+			else if (API.HasMount(yak)) {
+				API.Print("Player is Using the Grand Expedition Yak to Access Vendor!");
+				if (!API.HasAura(yak)) {
+					API.SummonMount(yak);
+				}
+			}
+		}
+		else {
+			API.Print("Player Wanted to Use their Repair Mount but They Were Indoors.");
+		}
+	}
+	
 	// Method:		"RepairCheck()"
 	// Purpose:		This is the main method to be run on a recursive loop, ideally, or within something
 	public static IEnumerable<int> RepairCheck() {
@@ -945,14 +985,37 @@ public class Merchant
 		if (IsRepairNeeded()) {
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
-			if (closest.Count > 0) {
-				API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
-				// Identifying Merchant and moving to it.
-				var check = new Fiber<int>(MoveToMerchant(closest));
-				while (check.Run()) {
-					yield return 100;
+			if (closest.Count > 0 || HasRepairMount()) {
+				if (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")) {
+					yield return 1000; // 1 second delay to stop player from moving.
+					UseRepairMount();
+					yield return 2000; // Delay for vendors to Appears.
+					// Identifying Vendor for Chosen Mount
+					int unitID = 0;
+					if (API.HasAura(61447)) {
+						unitID = 32641;
+					}
+					else if (API.HasAura(122708)) {
+						unitID = 62822;
+					}
+					// Setting focus to the vendor.
+					foreach(var unit in API.Units) {
+						if (unit.EntryID == unitID) {
+							API.Me.SetFocus(unit);
+							API.Me.SetTarget(unit);
+							break;
+						}
+					}
 				}
-				
+				else {
+					API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+					// Identifying Merchant and moving to it.
+					var check = new Fiber<int>(MoveToMerchant(closest));
+					while (check.Run()) {
+						yield return 100;
+					}
+				}
+					
 				// Interacting with Merchant
 				var check2 = new Fiber<int>(InteractWithMerchant());
 				while (check2.Run()) {
@@ -989,6 +1052,8 @@ public class Merchant
 	  	return true;
 	}
 	
+	// Method:			"getAllVendors()"
+	// Purpose:			Returns all vendors, Repair, food, and generic into one List of Objects
 	private static List<object> getAllVendors() {
 		List<object> allOfEm = new List<object>();
 		
@@ -1029,7 +1094,26 @@ public class Merchant
 		}
 		return allOfEm;
 	}
+	
+	// Method:		"PlayerShouldStopVendoring()";
+	// Purpose		To create a boolean check to return true of the player is no longer able to clear out his bags, 
+	//				to ignore VendorCheck action.
+	public static bool PlayerShouldStopVendoring() {
+		if (!IgnoreVendor) {
+			int potentialFreeSlots = API.GetFreeBagSlots() + API.GlobalBotSettings.Sell_LootedItems.Count;
+			if (potentialFreeSlots < MinFreeSlots) {
+				IgnoreVendor = true;
+				return true;
+			}
+		} 
+		else {
+			return true;
+		}
+		return false;
+	}
 
+	// Method:			"InventoryCheck()"
+	// Purpose:			This is the main implementation of the Inventory check logic.
 	public static IEnumerable<int> InventoryCheck() {
 		// Initialization check
 		// If I have changed zones, re-initialize.
@@ -1039,14 +1123,39 @@ public class Merchant
 		if (InventoryIsFull()) {
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(getAllVendors());
-			if (closest.Count > 0) {
-				API.Print("Player Needs to Clear His Bags.  Heading to nearest Vendor!");
-				// Identifying Merchant and moving to it.
-				var check = new Fiber<int>(MoveToMerchant(closest));
-				while (check.Run()) {
-					yield return 100;
+			if (closest.Count > 0 || HasRepairMount()) {
+				if (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")) {
+					yield return 1000; // 1 second delay to stop player from moving.
+					UseRepairMount();
+					yield return 2000; // Delay for vendors to Appears.
+					// Identifying Vendor for Chosen Mount
+					int unitID = 0;
+					// Tundra NPC
+					if (API.HasAura(61447)) {
+						unitID = 32641;
+					}
+					// YAK NPC
+					else if (API.HasAura(122708)) {
+						unitID = 62822;
+					}
+					// Setting focus to the vendor.
+					foreach(var unit in API.Units) {
+						if (unit.EntryID == unitID) {
+							API.Me.SetFocus(unit);
+							API.Me.SetTarget(unit);
+							break;
+						}
+					}
 				}
-				
+				else {
+					API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+					// Identifying Merchant and moving to it.
+					var check = new Fiber<int>(MoveToMerchant(closest));
+					while (check.Run()) {
+						yield return 100;
+					}
+				}
+					
 				// Interacting with Merchant
 				var check2 = new Fiber<int>(InteractWithMerchant());
 				while (check2.Run()) {
