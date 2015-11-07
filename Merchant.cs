@@ -874,12 +874,12 @@ public class Merchant
 	private static int getDurability() {
 		int count = 9;
 		float durability = 0;
-		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) local result = durability/max; return result");
-		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) local result = durability/max; return result");
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) if durability ~= nil then local result = durability/max; return result else return 1.0 end");
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) if durability ~= nil then local result = durability/max; return result else return 1.0 end");
 		for (int i = 5; i <= 10; i++) {
-			durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") local result = durability/max; return result");
+			durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") if durability ~= nil then local result = durability/max; return result else return 1.0 end");
 		}
-		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) local result = durability/max; return result");
+		durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) if durability ~= nil then local result = durability/max; return result else return 1.0 end");
 		
 		if (API.ExecuteLua<bool>("local durability = GetInventoryItemDurability(17); if durability ~= nil then return true else return false end")) {
 			durability += API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(17) local result = durability/max; return result");
@@ -893,27 +893,24 @@ public class Merchant
 	// Purpose		Returns if player has any Broken (stored) items
 	private static int NumItemsBroken() {
 		int count = 0;
-		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) local result = durability/max; return result") < 0.1f) {
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(1) if durability ~= nil then local result = durability/max; return result else return 1.0 end") < 0.1f) {
 			count++;
 		}
-		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) local result = durability/max; return result") < 0.1f) {
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(3) if durability ~= nil then local result = durability/max; return result else return 1.0 end") < 0.1f) {
 			count++;
 		}
 		for (int i = 5; i <= 10; i++) {
-			if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") local result = durability/max; return result") < 0.1f) {
+			if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(" + i + ") if durability ~= nil then local result = durability/max; return result else return 1.0 end") < 0.1f) {
 				count++;
 			}
 		}
-		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) local result = durability/max; return result") < 0.1f) {
+		if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(16) if durability ~= nil then local result = durability/max; return result else return 1.0 end") < 0.1f) {
 			count++;
 		}
 		if (API.ExecuteLua<bool>("local durability = GetInventoryItemDurability(17); if durability ~= nil then return true else return false end")) {
 			if (API.ExecuteLua<float>("local durability,max = GetInventoryItemDurability(17) local result = durability/max; return result") < 0.1f) {
 				count++;
 			}
-		}
-		if (count > 0) {
-			API.Print("It Appears You've Taken Some Heavy Damage. Let's Get to a Vendor and Repair!");
 		}
 		return count;
 	}
@@ -985,8 +982,8 @@ public class Merchant
 		if (IsRepairNeeded()) {
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
-			if (closest.Count > 0 || HasRepairMount()) {
-				if (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")) {
+			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();"))) {
+				if (HasRepairMount()) {
 					yield return 1000; // 1 second delay to stop player from moving.
 					UseRepairMount();
 					yield return 2000; // Delay for vendors to Appears.
@@ -1123,8 +1120,8 @@ public class Merchant
 		if (InventoryIsFull()) {
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(getAllVendors());
-			if (closest.Count > 0 || HasRepairMount()) {
-				if (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")) {
+			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();"))) {
+				if (HasRepairMount()) {
 					yield return 1000; // 1 second delay to stop player from moving.
 					UseRepairMount();
 					yield return 2000; // Delay for vendors to Appears.
