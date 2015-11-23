@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
-|   Last Update Nov. 2nd, 2015 */
+|   Last Update Nov. 23rd, 2015 */
 
 
 public class DraenorMerchants {
@@ -28,6 +28,7 @@ public class DraenorMerchants {
 			}
             // Frostfire Ridge (and caves and phases and Garrison)
             if (zoneID == 6720 || zoneID == 6868 || zoneID == 6745 || zoneID == 6849 || zoneID == 6861 || zoneID == 6864 || zoneID == 6848 || zoneID == 6875 || zoneID == 6939 || zoneID == 7005 || zoneID == 7209 || zoneID == 7004 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
+                IsSpecialPathingNeeded = true;
                 return getFFR(factionIsHorde,vendorType);
             }
 
@@ -575,6 +576,62 @@ public class DraenorMerchants {
         int zoneID = Merchant.API.Me.ZoneId; 
         
         if (Merchant.API.Me.IsHorde) {
+            
+                // FROSTFIRE RIDGE ZONE SPECIAL PATHING!
+            if (zoneID == 6720 || zoneID == 6868 || zoneID == 6745 || zoneID == 6849 || zoneID == 6861 || zoneID == 6864 || zoneID == 6848 || zoneID == 6875 || zoneID == 6939 || zoneID == 7005 || zoneID == 7209 || zoneID == 7004 || zoneID == 7327 || zoneID == 7328 || zoneID == 7329) {
+                
+                Vector3 location = new Vector3(5419.3f, 4900.0f, 55.3f);
+                Vector3 location2 = new Vector3(5312.3f, 5009.5f, 5.0f);
+                Vector3 location3 = new Vector3(5411.1f, 5012.9f, 3f);
+                
+                // At the docks
+                if (Merchant.API.Me.Distance2DTo(location2) < 90 || Merchant.API.Me.Distance2DTo(location3) < 40 && !Merchant.API.IsInGarrison) {
+                    var check = new Fiber<int>(HearthToGarrison());
+                    while (check.Run()) {
+                        yield return 100;
+                    }
+                    yield return 1000;
+                    if (!Merchant.API.IsInGarrison) {
+                        Merchant.API.Print("WARNING!!! Serious mesh issues at the docks. Please move up to the garrison manually and restart.");
+                    }
+                }
+                
+                // Moving up from the docks - compensating for mesh issues.
+                if (Merchant.API.Me.Distance2DTo(location) < 200 && !Merchant.API.IsInGarrison) {
+                    Merchant.API.Print("Heading from the Shipyard Back to Your Garrison!");
+                    
+                    while (!Merchant.API.MoveTo(5475.7f, 4878.2f, 76.6f)) {
+                        yield return 100;
+                    }
+                    
+                    while (!Merchant.API.MoveTo(5473.5f, 4808.1f, 113.2f)) {
+                        yield return 100;
+                    }
+                    
+                    while (!Merchant.API.MoveTo(5464.6f, 4773.1f, 124.3f)) {
+                        yield return 100;
+                    }
+                    
+                    while (!Merchant.API.MoveTo(5545.9f, 4723.0f, 151.3f)) {
+                        yield return 100;
+                    }
+                    // To Pause and let mesh load.
+                    yield return 2500;
+                    
+                    while (!Merchant.API.CTM(5564.7f, 4653.8f, 148.7f)) {
+                        yield return 100;
+                    }
+                }
+                
+                // If already in Garrison
+                if (Merchant.API.IsInGarrison)
+                {
+                    var check = new Fiber<int>(GTownHallExit());
+                    while (check.Run()){
+                        yield return 100;
+                    }
+                }
+            }
             // TALADOR ZONE SPECIAL PATHING!!!!!
             // Each Special condition is labeled.
             if (zoneID == 6662 || zoneID == 6980 || zoneID == 6979 || zoneID == 7089 || zoneID == 7622)
@@ -791,6 +848,125 @@ public class DraenorMerchants {
             yield break;
         }
         Merchant.API.DisableCombat = false;
+    }
+    
+    // Method:          "GTownHallExit()"
+    // What it does:    Navigates out of a lvl 2 or 3 Garrison Town Hall (Horde)
+    // Purpose:         Rebot has serious Mesh issues when starting a script within a Garrison
+    //                  But, even worse, starting within a town hall.  This solves this issue
+    //                  by using Click-To-Move actions to navigate out of the town hall successfully.
+    //                  This is best used in the "initialization" stage of a script, or to be implemented
+    //                  immediately after hearthing to the Garrison.
+    public static IEnumerable<int> GTownHallExit()
+    {
+        int tier = Merchant.API.ExecuteLua<int>("local level = C_Garrison.GetGarrisonInfo(); return level;");
+        string zone = Merchant.API.ExecuteLua<string>("local zone = GetMinimapZoneText(); return zone;");
+        Vector3 location = new Vector3(5559.2f, 4604.8f, 141.7f);
+        Vector3 location2 = new Vector3(5562.576f, 4601.484f, 141.7169f);
+        Vector3 location3 = new Vector3(5576.729f, 4584.367f, 141.0846f);
+        Vector3 location4 = new Vector3(5591.181f, 4569.721f, 136.2159f);
+        
+        if (Merchant.API.Me.Distance2DTo(location) < 25 && Merchant.API.IsInGarrison && (tier == 2 || tier == 3))
+        {
+            // If I do not disable Flightmaster discovery, then it tries to run to flightmaster BEFORE executing CTM actions
+            // which with the lack of a mesh, often results in the player just running helplessly into the wall with mesh errors spamming.
+            Merchant.API.GlobalBotSettings.FlightMasterDiscoverRange = 0.0f;
+            while(Merchant.API.Me.Distance2DTo(location2) > 5)
+            {
+                Merchant.API.CTM(location2);
+                yield return 100;
+            }
+            while(Merchant.API.Me.Distance2DTo(location3) > 5)
+            {
+                Merchant.API.CTM(location3);
+                yield return 100;
+            }
+            while(Merchant.API.Me.Distance2DTo(location4) > 5)
+            {
+                Merchant.API.CTM(location4);
+                yield return 100;
+            }
+            Merchant.API.GlobalBotSettings.FlightMasterDiscoverRange = 75.0f;
+        }
+        yield break;
+    }
+    
+    // Method:          "HearthToGarrison()"
+    // What it Does:    Exactly as described, uses the Garrison hearthstone.
+    // Purpose:         Extraordinarily useful for speed.  If player needs to pickup a quest that starts in the garrison and they are not there
+    //                  by adding this option it will hearth them back, likewise with turning in something.
+    //                  This method is invaluable and used incredibly frequently to maximize the efficiency of player scripts and believable player
+    //                  behavior.
+    public static IEnumerable<int> HearthToGarrison()
+    {
+        // Error check to avoid use if flying
+        if (Merchant.API.Me.IsOnTaxi)
+        {
+            // Waits to use until OFF the IsOnTaxi.
+            Merchant.API.Print("Player is Currently on a Taxi, Please Be Patient And Enjoy the Scenery!");
+            int count = 0;
+            while (Merchant.API.Me.IsOnTaxi)
+            {
+                yield return 1000;
+                count++;
+            }
+            Merchant.API.Print("Player Exited the Flightpath after " + count + " seconds!");
+            yield return 1000;
+        }
+        
+        if (!Merchant.API.IsInGarrison) 
+        {
+            // Verifying Garrison hearthstone is not on Cooldown.
+            if (Merchant.API.ItemCooldown(110560) == 0) 
+            {
+                if (Merchant.API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end"))
+                {
+                    Merchant.API.Print("Player is Interacting With a Vendor. Closing Window Before Attempting to Hearth, lest the Bot Will Attempt to Sell G-Hearthstone!");
+                    Merchant.API.ExecuteLua("CloseMerchant()");
+                    yield return 1000;
+                }
+                
+                // This is a check to verify player has moved, lest it will re-attempt to hearth.
+                Vector3 startPos = Merchant.API.Me.Position;
+                while (Merchant.API.Me.Distance2DTo(startPos) < 50)
+                {
+                    Merchant.API.Print("Hearthing to Garrison");
+                    Merchant.API.UseItem(110560);
+                    yield return 1000;
+                    // This keeps the player from attempting the next action until the Garrison hearthstone is successfully used
+                    while(Merchant.API.Me.IsCasting) 
+                    {
+                        yield return 100;
+                    }
+                    yield return 1000;
+                    if (Merchant.API.Me.Distance2DTo(startPos) >= 50)
+                    {
+				        break;
+                    }
+                    else
+                    {
+                        Merchant.API.Print("Player Failed to Hearth. Trying Again...");
+                    }
+                }
+                // Waiting for loading screen!
+                while (!Merchant.API.IsInGarrison)
+                {
+                    yield return 1000;
+                }
+                // Sometimes mesh errors occur by trying to CTM because it tries as soon as loading screen goes away but maybe some assets
+                // are not fully loaded in the world.  This gives a slight delay to ensure no error.  Really depends on player PC and connection.
+                Merchant.API.Print("One Moment, Giving Mesh a Chance to Catchup!");
+                yield return 5000;
+            }
+            else 
+            {
+                // Assumedly, in instances like this, a 2ndary logic route is given as backup, either the mesh or by Flightpath.
+                Merchant.API.Print("Player Wanted to Hearth to Garrison, but it is on Cooldown...");
+                // Apply Flight Logic soon...
+                yield break;
+            }
+        }
+        yield break;
     }
 	
 }
