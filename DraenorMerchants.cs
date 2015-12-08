@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
-|   Last Update Nov. 23rd, 2015 */
+|   Last Update Nov. 2nd, 2015 */
 
 
 public class DraenorMerchants {
@@ -61,6 +61,11 @@ public class DraenorMerchants {
             // Tanaan Jungle
             if (zoneID == 6723) {
                 return getTanaan(factionIsHorde,vendorType);
+            }
+            
+            // Tanaan Intro ZoneId
+            if (zoneID == 7025) {
+                return getTanaanIntroZone(factionIsHorde,vendorType);
             }
 
             // Ashran (and mine)
@@ -168,6 +173,40 @@ public class DraenorMerchants {
         locations.AddRange(neut0);
 		//
         return locations; 
+    }
+    
+    
+    private static List<object> getTanaanIntroZone(bool factionIsHorde, int vendorType) {
+         List<object> locations = new List<object>();
+         if (factionIsHorde) {
+             // Food and Drink
+             if (vendorType == 1) {
+                 
+             }
+             
+             // Repair
+             else if (vendorType == 2) {
+                 Vector3 location = new Vector3(4514.3f, -2640.5f, 1.6f);
+                 if (Merchant.API.Me.Distance2DTo(location) < 100) {
+                     List<object> rep0 = new List<object>(){4515.1f, -2642.5f, 1.3f, 78568, IsSpecialPathingNeeded};
+                 }
+                 
+             }
+             
+             // Generic (vendor only, no repair or refreshments)
+             else if (vendorType == 3) {
+                 
+             }
+             
+             // Both Repair and Food
+         }
+         else
+         {
+             // Alliance Locations
+         }
+         // Add Neutral locations of Both Repair and Food
+         
+         return locations;
     }
 
     private static List<object> getSMV(bool factionIsHorde, int vendorType) {
@@ -525,6 +564,7 @@ public class DraenorMerchants {
             // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
             if (!Merchant.API.IsQuestCompleted(34378)) {
                 allFood.Add(112449);
+                allFood.Add(108920);
             }
             
             // Higher level Crafted Food
@@ -557,6 +597,7 @@ public class DraenorMerchants {
             // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
             if (!Merchant.API.IsQuestCompleted(34378)) {
                 allDrinks.Add(112449);
+                allDrinks.Add(108920);
             }
             
             // Higher level Crafted drinks
