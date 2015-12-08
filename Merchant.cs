@@ -83,7 +83,7 @@ public class Merchant
         API.GlobalBotSettings.VendorOnNumDestroyedItems = 9;
 
         // Continent Selection
-        if (API.Me.ContinentID == 1116)
+        if (API.Me.ContinentID == 1116 || API.Me.ContinentID == 1265)
 		{
 			FoodIDs = DraenorMerchants.getFood();
 			DrinkIDs = DraenorMerchants.getWater();
@@ -346,7 +346,7 @@ public class Merchant
 		bool factionIsHorde = API.Me.IsHorde;
 
 		// Draenor Continent
-		if (continentID == 1116)
+		if (continentID == 1116 || continentID == 1265)
 		{
 			vendor = DraenorMerchants.getMerchantInfo(zoneID, factionIsHorde, TypeofMerchant);
 		}
@@ -465,7 +465,7 @@ public class Merchant
 		// This is where to add special pathing considerations.
 		if (IsSpecialPathingNeeded)
 		{
-			if (API.Me.ContinentID == 1116)
+			if (API.Me.ContinentID == 1116 || API.Me.ContinentID == 1265)
 			{
 				var check = new Fiber<int>(DraenorMerchants.doSpecialPathing());
 				while (check.Run())
@@ -1484,3 +1484,4 @@ public class Merchant
 		yield break;
 	}
 }
+
