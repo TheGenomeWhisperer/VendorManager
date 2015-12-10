@@ -34,6 +34,7 @@ public class DraenorMerchants {
 
             // Gorgrond (and caves and phases)
             if (zoneID == 6721 || zoneID == 6885 || zoneID == 7160 || zoneID == 7185) {
+                IsSpecialPathingNeeded = true;
                 return getGorgrond(factionIsHorde,vendorType);
             }
 
@@ -673,6 +674,26 @@ public class DraenorMerchants {
                     }
                 }
             }
+            
+            // GORGROND ZONE SPECIAL PATHING!!!!!
+            //
+            else if (zoneID == 6721 || zoneID == 6885 || zoneID == 7160 || zoneID == 7185)
+            {
+                List<object> result = Merchant.GetClosestMerchant(Merchant.getAllVendors());;
+                // Beastwatch Vendor... move around the mill.
+                if ((int)result[2] == 82732) 
+                {
+                    while(!Merchant.API.MoveTo(5786.1f, 1255.8f, 107.4f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.MoveTo(5779.9f, 1294.9f, 107.3f))
+                    {
+                        yield return 100;
+                    }
+                }
+            }
+            
             // TALADOR ZONE SPECIAL PATHING!!!!!
             // Each Special condition is labeled.
             if (zoneID == 6662 || zoneID == 6980 || zoneID == 6979 || zoneID == 7089 || zoneID == 7622)
