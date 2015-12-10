@@ -23,10 +23,10 @@ public class Merchant
 	public static int MinWater = 2;
 
 	// Repair information
-	public static int MinDurability = 20;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
+	public static int MinDurability = 99;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
 
 	// Once the bag has this few of slots it will go Vendor goods.
-	public static int MinFreeSlots = 3;
+	public static int MinFreeSlots = 5;
 
 	// Once Bags are Full and No items are part of a list to be vendored, rather than rechecking the vendor constantly, this disables rechecking. This can also manually disable Vendor action.
 	public static bool IgnoreVendor = false;
@@ -81,6 +81,7 @@ public class Merchant
         API.GlobalBotSettings.BuyNumDrink = 0;
         API.GlobalBotSettings.VendorOnMinDurability = 0;
         API.GlobalBotSettings.VendorOnNumDestroyedItems = 9;
+		API.GlobalBotSettings.MinimumFreeInventorySlots = 0;
 
         // Continent Selection
         if (API.Me.ContinentID == 1116 || API.Me.ContinentID == 1265)
@@ -1080,8 +1081,11 @@ public class Merchant
 
 		if (IsVendorOpen())
 		{
-			// Sell Grey Items
-			API.ExecuteMacro("/run for b=0,4 do for s=1,GetContainerNumSlots(b)do local n=GetContainerItemLink(b,s)if n and strfind(n,\"" + grey + "\") then print(\"Selling \"..n) UseContainerItem(b,s)end end end");
+			// Sell Grey Items - Loops 3 times to ensure all are sold.
+			for (int i = 0; i < 5; i++)
+			{
+				API.ExecuteMacro("/run for b=0,4 do for s=1,GetContainerNumSlots(b)do local n=GetContainerItemLink(b,s)if n and strfind(n,\"" + grey + "\") then print(\"Selling \"..n) UseContainerItem(b,s)end end end");
+			}
 
 			// Sell All "Looted Items"
 			bool found;
