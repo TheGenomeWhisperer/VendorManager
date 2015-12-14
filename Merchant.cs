@@ -23,7 +23,7 @@ public class Merchant
 	public static int MinWater = 2;
 
 	// Repair information
-	public static int MinDurability = 99;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
+	public static int MinDurability = 20;  // Percentage Gear damage remaining before heading to a vendor, this would be 20%.
 
 	// Once the bag has this few of slots it will go Vendor goods.
 	public static int MinFreeSlots = 5;
@@ -198,6 +198,7 @@ public class Merchant
 					if (numInstances > 1 && numInstances < 3)
 					{
 						id = copy[j][0];
+						numInstances = 0;
 					}
 				}
 			}
@@ -985,6 +986,9 @@ public class Merchant
 
 				// And, since we are at the vendor already, let's clear some loot.
 				SellLootedItems();
+				
+				// Destroy any BoP toys in bags that have no vendor value that player already knows.
+				DestroyKnownToys();
 
 				// And, since we are already in town, let's see if it's worth the effort to repair.
 				// Quick repair if at vendor
@@ -1039,11 +1043,12 @@ public class Merchant
 		}
 		List<int> itemsToSell = new List<int>();
 
-		// Verifying no protected items in list, and if so, removing.
+		// Gathering Looted Items to the Sell List
 		bool toAdd;
 		foreach (int toSellID in API.GlobalBotSettings.Sell_LootedItems)
 		{
 			toAdd = true;
+			// Verifying no protected items in list, and if so, removing.
 			foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds)
 			{
 				if (protectedID == toSellID)
@@ -1057,9 +1062,101 @@ public class Merchant
 				itemsToSell.Add(toSellID);
 			}
 		}
+		
+		// Gathering all inventory items that are Soulbound and not a gear item
+		Inventory.Refresh();
+		int vendorPrice;
+		bool soulBound;
+		bool isEquipable;
+		string quality;
+		var ItemList = Inventory.Items;
+		foreach (var item in ItemList)
+		{
+			vendorPrice = item.ItemInfo.VendorPrice;
+			soulBound = IsItemSoulbound(item.ItemId);
+			isEquipable = item.ItemInfo.IsEquipable;
+			quality = item.ItemInfo.Quality.ToString();
+			if (soulBound && vendorPrice != 0 && !isEquipable && (quality.Equals("Green") || quality.Equals("Blue")))
+			{
+				// Ok, now before adding it to the SELL LIST, let's make sure it's not protected.
+				toAdd = true;
+				foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds)
+				{
+					if (protectedID == item.ItemId)
+					{
+						toAdd = false;
+					}
+				}
+				// Adding it to sell list.
+				if (toAdd == true)
+				{
+					foreach (int id in itemsToSell) 
+					{
+						// ensuring no duplicates.
+						if (id == item.ItemId)
+						{
+							toAdd = false;
+						}
+					}
+					if (toAdd == true)
+					{
+						itemsToSell.Add(item.ItemId);
+					}
+				}
+			}
+		}
+		
+		// Gathering all inventory items that are soulbound, a gear item, 5 levels or more below current player level. 
+		bool itemIsTooWeak;
+		int minItemLevel;
+		foreach (var item in ItemList)
+		{
+			vendorPrice = item.ItemInfo.VendorPrice;
+			soulBound = IsItemSoulbound(item.ItemId);
+			isEquipable = item.ItemInfo.IsEquipable;
+			minItemLevel = GetItemMinLevel(item.ItemId);
+			quality = item.ItemInfo.Quality.ToString();
+			if ((API.Me.Level - 3) > minItemLevel && minItemLevel != 0)
+			{
+				itemIsTooWeak = true;
+			}
+			else
+			{
+				itemIsTooWeak = false;
+			}
+			if (soulBound && vendorPrice != 0 && isEquipable && itemIsTooWeak && (quality.Equals("Green") || quality.Equals("Blue")))
+			{
+				itemsToSell.Add(item.ItemId);
+			}
+		}
 		// Note: Since these lists are pulled directly from Rebot, it auto-filters duplicates already
 		// so we do not need to check for duplicates and filter them here.
 		return itemsToSell;
+	}
+	
+	public static void DestroyKnownToys()
+	{
+		Inventory.Refresh();
+		int vendorPrice;
+		bool soulBound;
+		bool isToy;
+		bool playerHasToy;
+		var ItemList = Inventory.Items;
+		// Items to Destroy - Toys that are soulbound, already known, and not vendorable.
+		foreach (var item in ItemList)
+		{
+			// Gear items that have no value
+			vendorPrice = item.ItemInfo.VendorPrice;
+			soulBound = IsItemSoulbound(item.ItemId);
+			isToy = IsItemAToy(item.ItemId);
+			playerHasToy = API.ExecuteLua<bool>("return PlayerHasToy(" + item.ItemId + ")");
+			if (soulBound && vendorPrice == 0 && isToy && playerHasToy)
+			{
+				// Destroy the item...
+				API.Print("Destroying the Following Item:  " + item.Name);
+				API.DeleteItem(item.ItemId);
+			}
+		}
 	}
 
 	// Method:		"SellLootedItems(List<int>)"
@@ -1071,35 +1168,45 @@ public class Merchant
 		{
 			Initialize();
 		}
+		// Let's count how many Grey Items to Sell
+		int numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1; end; end; end return count");
 		// For future use to sell specific "types" of gear.
 		List<int> itemsToSell = getItemsToSell();
-		string grey = "ff9d9d9d";
-		string white = "ffffffff";
-		string green = "ff1eff00";
-		string blue = "ff0070dd";
-		string purple = "ffa335ee";
+		if (!IgnoreVendor)
+		{
+			int potentialFreeSlots = API.GetFreeBagSlots() + itemsToSell.Count + numGrey;
+			if (potentialFreeSlots < MinFreeSlots)
+			{
+				IgnoreVendor = true;
+			}
+		}
 
 		if (IsVendorOpen())
 		{
-			// Sell Grey Items - Loops 3 times to ensure all are sold.
-			for (int i = 0; i < 5; i++)
+			// Number of times to spam macro... as it sells in 12 item increments:
+			if (numGrey > 0)
 			{
-				API.ExecuteMacro("/run for b=0,4 do for s=1,GetContainerNumSlots(b)do local n=GetContainerItemLink(b,s)if n and strfind(n,\"" + grey + "\") then print(\"Selling \"..n) UseContainerItem(b,s)end end end");
+				API.Print("Selling:   " + numGrey + " Gray Items...");
+				int num = (numGrey / 12) + 1;
+				for (int i = 0; i < num; i++)
+				{
+					API.ExecuteLua("for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then DEFAULT_CHAT_FRAME:AddMessage(\"Selling \"..name); UseContainerItem(bag,slot) end; end; end");
+				}
 			}
+			
 
 			// Sell All "Looted Items"
 			bool found;
-			if (itemsToSell.Count > 0)
-			{
-				API.Print("Selling All Items that You Have Looted and are Not on the \"Protected\" list");
-			}
-			foreach (int itemID in getItemsToSell())
+			string itemName;
+			foreach (int itemID in itemsToSell)
 			{
 				found = false;
 				found = API.ExecuteLua<bool>("local match = false; for i=0,4 do for j=1,GetContainerNumSlots(i)do local n=GetContainerItemID(i,j)if n == " + itemID + " then local s=GetContainerItemLink(i,j)print(\"Selling \"..s)match = true; end end end return match");
 				if (found)
 				{
 					// Action to sell item.
+					itemName = API.ExecuteLua<string>("local name = GetItemInfo(" + itemID + "); return name;");
+					API.Print("Selling:   " + itemName);
 					API.UseItem(itemID);
 				}
 			}
@@ -1253,6 +1360,7 @@ public class Merchant
 		}
 		if (IsRepairNeeded())
 		{
+			API.Print("test");
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
 			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")))
@@ -1303,7 +1411,10 @@ public class Merchant
 
 				// Clearing our Loot first
 				SellLootedItems();
-
+				
+				// Destroy any BoP toys in bags that have no vendor value that player already knows.
+				DestroyKnownToys();
+				
 				// Repairing
 				Repair();
 
@@ -1369,12 +1480,14 @@ public class Merchant
 					if (numInstances > 1 && numInstances < 3)
 					{
 						id = (int)allOfEm[j + 3];
+						numInstances = 0;
 					}
 				}
 				if (numInstances > 1)
 				{
 					for (int j = allOfEm.Count - 5; j >= 4; j = j - 5)
 					{
+						
 						if (numInstances > 1)
 						{
 							if ((int)allOfEm[j + 3] == id)
@@ -1400,7 +1513,7 @@ public class Merchant
 	{
 		if (!IgnoreVendor)
 		{
-			int potentialFreeSlots = API.GetFreeBagSlots() + API.GlobalBotSettings.Sell_LootedItems.Count;
+			int potentialFreeSlots = API.GetFreeBagSlots() + getItemsToSell().Count;
 			if (potentialFreeSlots < MinFreeSlots)
 			{
 				IgnoreVendor = true;
@@ -1460,7 +1573,7 @@ public class Merchant
 				}
 				else
 				{
-					API.Print("Player is in Need of Repair.  Heading to nearest Vendor!");
+					API.Print("Player's Inventory is Full! Heading to nearest Vendor!");
 					// Identifying Merchant and moving to it.
 					var check = new Fiber<int>(MoveToMerchant(closest));
 					while (check.Run())
@@ -1478,7 +1591,10 @@ public class Merchant
 
 				// Clearing our Loot first
 				SellLootedItems();
-
+				
+				// Destroy any BoP toys in bags that have no vendor value that player already knows.
+				DestroyKnownToys();
+				
 				// Repairing
 				Repair();
 
@@ -1486,6 +1602,68 @@ public class Merchant
 			}
 		}
 		yield break;
+	}
+	
+	// Method:          "IsItemSoulbound(int)"
+    // What it Does:    Returns whether the given item in a player bags is SoulBound.  If the given item is not, or not owned, it returns false
+    // Purpose:         Mainly for vendor filtering.  If item is SoulBound, not equippable, and has a vendor value > 0, it might be worth selling.
+	public static bool IsItemSoulbound(int ID)
+	{
+		bool result;
+		int container = -1;
+		int slot = -1;
+		// parsing through inventory items to match ID
+		foreach (var item in Inventory.Items)
+		{
+			if (item.ItemId == ID)
+			{
+				container = item.ContainerId; // Establishing bag position
+				slot = item.SlotId;
+			}
+		}
+		
+		// Parsing tooltip for Soulbound info
+		if (container >= 0)
+		{
+			result = API.ExecuteLua<bool>("local tooltip; local function create() local tip, leftside = CreateFrame(\"GameTooltip\"), {} for i = 1, 3 do local L,R = tip:CreateFontString(), tip:CreateFontString() L:SetFontObject(GameFontNormal) R:SetFontObject(GameFontNormal) tip:AddFontStrings(L,R) leftside[i] = L end tip.leftside = leftside return tip end; local function Is_Soulbound(bag, slot) tooltip = tooltip or create() tooltip:SetOwner(UIParent,\"ANCHOR_NONE\") tooltip:ClearLines() tooltip:SetBagItem(bag, slot) local s = tooltip.leftside[2]:GetText() local t = tooltip.leftside[3]:GetText() tooltip:Hide() if (s == ITEM_SOULBOUND or t == ITEM_SOULBOUND) then return true; else return false; end end return Is_Soulbound(" + container + "," + slot + ")");
+		}
+		else
+		{
+			result = false;
+		}
+		return result;
+	}
+	
+	public static int GetItemMinLevel(int ID)
+	{
+		return API.ExecuteLua<int>("local _,_,_,_,itemMinLevel = GetItemInfo(" + ID + "); return itemMinLevel;");
+	}
+	
+	public static bool IsItemAToy(int ID)
+	{
+		bool result;
+		int container = -1;
+		int slot = -1;
+		// parsing through inventory items to match ID
+		foreach (var item in Inventory.Items)
+		{
+			if (item.ItemId == ID)
+			{
+				container = item.ContainerId; // Establishing bag position
+				slot = item.SlotId;
+			}
+		}
+		
+		// Parsing tooltip for Soulbound info
+		if (container >= 0)
+		{
+			result = API.ExecuteLua<bool>("local tooltip; local function create() local tip, leftside = CreateFrame(\"GameTooltip\"), {} for i = 1, 5 do local L,R = tip:CreateFontString(), tip:CreateFontString() L:SetFontObject(GameFontNormal) R:SetFontObject(GameFontNormal) tip:AddFontStrings(L,R) leftside[i] = L end tip.leftside = leftside return tip end; local function Is_Toy(bag, slot) tooltip = tooltip or create() tooltip:SetOwner(UIParent,\"ANCHOR_NONE\") tooltip:ClearLines() tooltip:SetBagItem(bag, slot) local s = tooltip.leftside[2]:GetText() local t = tooltip.leftside[3]:GetText() u = tooltip.leftside[4]:GetText() tooltip:Hide() if (s == TOY or t == TOY or u == TOY) then return true; else return false; end end return Is_Toy(" + container + "," + slot + ")");
+		}
+		else
+		{
+			result = false;
+		}
+		return result;
 	}
 }
 

@@ -360,9 +360,12 @@ public class DraenorMerchants {
         // Zangarra coordinates
         Vector3 zang1 = new Vector3(3187.2f, 788.7f, 77.7f);
         Vector3 zang2 = new Vector3(3035.2f,  954.0f,  105.5f);
+        // Shatt tower
         Vector3 shatt1 = new Vector3(2604.9f, 2797.0f, 242.1f);
         Vector3 shatt2 = new Vector3(2943.0f, 3351.9f, 53.0f);
         Vector3 shatt3 = new Vector3(2575.1f, 2825.5f, 245.2f);
+        // Near the spiders
+        Vector3 LH1 = new Vector3(1120.1f, 2247.4f, 142.7f);
         if (factionIsHorde) {
 			// Food & Drink
 			if (vendorType == 1) {
@@ -407,11 +410,15 @@ public class DraenorMerchants {
                 
                 List<object> rep5 = new List<object>(){2801.6f, 2523.0f, 121.1f, 81093,IsSpecialPathingNeeded};
                 locations.AddRange(rep5);
-                List<object> rep6 = new List<object>(){1754.0f, 2552.6f, 133.7f, 81095,IsSpecialPathingNeeded};
-                locations.AddRange(rep6);
+                
+                if (Merchant.API.Me.Distance2DTo(LH1) > 500)
+                {
+                    List<object> rep6 = new List<object>(){1754.0f, 2552.6f, 133.7f, 81095,IsSpecialPathingNeeded};
+                    locations.AddRange(rep6);
+                }
                 List<object> rep7 = new List<object>(){1393.0f, 3289.5f, 133.7f, 81886,IsSpecialPathingNeeded};
                 locations.AddRange(rep7);
-                List<object> rep8 = new List<object>(){1541.2f, 2220.5f, 139.0f, 81951,IsSpecialPathingNeeded};
+                List<object> rep8 = new List<object>(){1556.9f, 2213.8f, 138.7f, 81951,IsSpecialPathingNeeded};
                 locations.AddRange(rep8);
 			}
             // Generic Vendor (No repair, no food)
@@ -430,6 +437,7 @@ public class DraenorMerchants {
 		// Add Neutral locations
 		// All Here...
 		//
+
         return locations; 
     }
 
@@ -782,7 +790,18 @@ public class DraenorMerchants {
                     Merchant.API.Print("Let's Get to that Vendor and Get Out of Here!");
                     yield break;
                 }
-                yield break;     
+                
+                // Navigational pathing if up on the ledge at Telmor
+                // LOCATION 5
+                Vector3 Telmor = new Vector3(759.8f, 2899.7f, 208.2f);
+                if (Merchant.API.Me.Distance2DTo(Telmor) < 50)
+                {
+                    Merchant.API.Print("Let's Take this Elevator and Get Out of Telmor!");
+                    var check = new Fiber<int>(TakeElevator(232027, 3, 777.6f, 2893.5f, 207.8f, 794.6f, 2912.5f, 152.0f));
+                    while (check.Run()) {
+                        yield return 100;
+                    }
+                }
             }
             // End Talador
             
@@ -888,9 +907,20 @@ public class DraenorMerchants {
                         }
                         Merchant.API.Print("Alright, It Is Coming Back to us. Get Ready!");
                     }
-                    while(unit.Position.Z > (startZ + 1.0)) 
+                    // Checking position of elevator against your current position.
+                    if (Merchant.API.Me.Position.Z < unit.Position.Z)
                     {
-                        yield return 100;
+                        while(unit.Position.Z > (startZ + 1.0)) 
+                        {
+                            yield return 100;
+                        }
+                    }
+                    else if (Merchant.API.Me.Position.Z > unit.Position.Z)
+                    {
+                        while(unit.Position.Z < (startZ - 1.0)) 
+                        {
+                            yield return 100;
+                        }
                     }
                 }
                 Merchant.API.Print("Ah, Excellent! Elevator is Here! Hop On Quick!");
