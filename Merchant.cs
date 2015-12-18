@@ -4,8 +4,8 @@
 |   To Be Used with "InsertContinentName.cs" and "Localization.cs" class
 |   For use in collaboration with the Rebot API 
 |
-|   Last Update Nov. 2nd, 2015 */
-
+|   Last Update: December 17th, 2015
+*/
 
 public class Merchant
 {
@@ -633,12 +633,22 @@ public class Merchant
 		yield break;
 	}
 
-	// Method:		"IsVendorOpen()"
+	// Method:		    "IsVendorOpen()"
+    // What it Does:    Returns true if the Vendor window is open and you are currently able to buy/selling
+    // Purpose:         Many vendors have gossip options on interact.  This could be useful on interaction checking to ensure
+    //                  the vendor window is open, and if it is not yet open, parsing through gossip options and selecting the correct one.
 	public static bool IsVendorOpen()
 	{
 		return API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
 	}
 
+	// Method:          "MerchantGossip()"
+    // What it Does:    Interacts with the appropriate Gossip option on a vendor to open the buy/sell window.
+    // Purpose:         If the player is at a Merchant (Refreshment, Vendor, or any generic merchant), at times on first interaction the Merchant may have various
+    //                  gossip options rather than opening the buy/sell window immediately.  In these cases, it would be necessary to determine which gossip option would be the
+    //                  correct one to open the vendor.  While most of the time it is the first option, I have found a few unique cases where this is not true, and as such
+    //                  to encompass all possibilities, this is a universal method to coose the correct option always.
+    //                  Example of when to use, after interacting with a merchant:  if (!IsVendorOpen) {MerchantGossip()};
 	private static void MerchantGossip()
 	{
 		// Initializing Function
@@ -1183,18 +1193,17 @@ public class Merchant
 
 		if (IsVendorOpen())
 		{
-			// Number of times to spam macro... as it sells in 12 item increments:
 			if (numGrey > 0)
 			{
 				API.Print("Selling:   " + numGrey + " Gray Items...");
-				int num = (numGrey / 12) + 1;
-				for (int i = 0; i < num; i++)
-				{
-					API.ExecuteLua("for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then DEFAULT_CHAT_FRAME:AddMessage(\"Selling \"..name); UseContainerItem(bag,slot) end; end; end");
-				}
+			}
+			// Spams Macro til all greys sold.
+			while (numGrey > 0)
+			{
+				API.ExecuteLua("for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then DEFAULT_CHAT_FRAME:AddMessage(\"Selling \"..name); UseContainerItem(bag,slot) end; end; end");
+				numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1; end; end; end return count");
 			}
 			
-
 			// Sell All "Looted Items"
 			bool found;
 			string itemName;
@@ -1244,7 +1253,8 @@ public class Merchant
 	}
 
 	// Method		"NumItemsBroken()"
-	// Purpose		Returns if player has any Broken (stored) items
+	// What it Does:    Returns if player has any Broken ("RED") items equipped.
+    // Purpose:         Could be useful if at a vendor to institute a brief repair.
 	public static int NumItemsBroken()
 	{
 		int count = 0;
@@ -1277,7 +1287,9 @@ public class Merchant
 		return count;
 	}
 
-	// To verify before running repair Action.
+	// Method:          "IsRepairVendorNearby()"
+    // What it Does:    Returns true if a player is within 100 yards of a Repair vendor
+    // Purpose:         Could be a useful check if player wanted to search for a vendor if passing through town
 	public static bool IsRepairVendorNearby()
 	{
 		foreach (var unit in API.Units)
@@ -1290,6 +1302,9 @@ public class Merchant
 		return false;
 	}
 
+	// Method:          "IsFoodVendorNearby()"
+    // What it Does:    Returns true if a player is within 100 yards of a food vendor
+    // Purpose:         Could be a useful check if player wanted to search for a vendor if passing through town
 	public static bool IsFoodVendorNearby()
 	{
 		foreach (var unit in API.Units)
