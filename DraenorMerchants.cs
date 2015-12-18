@@ -4,7 +4,8 @@
 |   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
-|   Last Update Nov. 2nd, 2015 */
+|   Last Update: December 17th, 2015
+*/
 
 
 public class DraenorMerchants {
@@ -567,7 +568,7 @@ public class DraenorMerchants {
         // Draenor Known Food IDs       
         // Draenor 90+ food
         if (level > 89 && level < 101) {
-            List<int> draenor = new List<int> {115351,115352,115353,115354,115355,117457,117454,118269,117471,130192,117470,118272,118268,111544,118416,128219,128498,118051,118050,117472,118270,117469,117474,86994,111456};
+            List<int> draenor = new List<int> {115351,115352,115353,115354,115355,117457,117454,118269,117471,130192,117470,118272,118268,111544,118416,128219,128498,118051,118050,117472,118270,117469,117474,86994,111456,113290};
             allFood.AddRange(draenor);
             
             // For Tanaan jungle Draenor intro only... and before Garrison is established to buy food.
