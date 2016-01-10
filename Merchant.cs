@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Localization.cs" class
 |   For use in collaboration with the Rebot API 
 |
-|   Last Update: December 17th, 2015
+|   Last Update: January 7th, 2016
 */
 
 public class Merchant
@@ -995,10 +995,14 @@ public class Merchant
 				setUsableWater();
 
 				// And, since we are at the vendor already, let's clear some loot.
-				SellLootedItems();
+				var selling = new Fiber<int>(SellLootedItems());
+                while(selling.Run())
+                {
+                    yield return 100;
+                }
 				
-				// Destroy any BoP toys in bags that have no vendor value that player already knows.
-				DestroyKnownToys();
+				// Destroy any BoP items that the vendor will not take.
+				DestroyAllUnnecessaryItems();
 
 				// And, since we are already in town, let's see if it's worth the effort to repair.
 				// Quick repair if at vendor
@@ -1028,7 +1032,22 @@ public class Merchant
 	{
 		if (IsVendorOpen() && API.ExecuteLua<bool>("return CanMerchantRepair()"))
 		{
-			API.ExecuteLua("RepairAllItems()");
+            int durability = getDurability();
+            if (durability < 100)
+            {
+                int cost = API.ExecuteLua<int>("local cost = GetRepairAllCost(); return cost;");
+                int gold = cost / 10000;
+                int silver = (cost % 10000) / 100;
+                int copper = (cost % 10000) % 1000;
+                
+                API.Print("\nPlayer's Gear Durability:    " + durability + "%\nRepairing Damaged Gear!\n----------\nCost of Repair: " + gold + "g " + silver + "s " + copper + "c");
+                API.ExecuteLua("RepairAllItems()");
+            }
+            else
+            {
+                API.Print("Your Gear is in Excellent Condition at 100% Durability! Repair Unnecessary at this Time...");
+            }
+            
 		}
 	}
 
@@ -1061,7 +1080,7 @@ public class Merchant
 			// Verifying no protected items in list, and if so, removing.
 			foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds)
 			{
-				if (protectedID == toSellID)
+				if (protectedID == toSellID || toSellID == 119348) // Admiral Taylor's Garrison Log item (I should create a specialized list of items to not attempt to sell, but not destroy)
 				{
 					toAdd = false;
 				}
@@ -1076,17 +1095,29 @@ public class Merchant
 		// Gathering all inventory items that are Soulbound and not a gear item
 		Inventory.Refresh();
 		int vendorPrice;
-		bool soulBound;
 		bool isEquipable;
 		string quality;
 		var ItemList = Inventory.Items;
+        
+        // Soulbound values for checking
+        bool soulBound = false;
+		int container;
+		int slot;
+        
 		foreach (var item in ItemList)
 		{
+            // Beginning SOULBOUND Check
+            container = item.ContainerId; // Establishing bag position
+            slot = item.SlotId;
+            // Parsing through the item tooltip since no available API
+            soulBound = API.ExecuteLua<bool>("local tooltip; local function create() local tip, leftside = CreateFrame(\"GameTooltip\"), {} for i = 1, 3 do local L,R = tip:CreateFontString(), tip:CreateFontString() L:SetFontObject(GameFontNormal) R:SetFontObject(GameFontNormal) tip:AddFontStrings(L,R) leftside[i] = L end tip.leftside = leftside return tip end; local function Is_Soulbound(bag, slot) tooltip = tooltip or create() tooltip:SetOwner(UIParent,\"ANCHOR_NONE\") tooltip:ClearLines() tooltip:SetBagItem(bag, slot) local s = tooltip.leftside[2]:GetText() local t = tooltip.leftside[3]:GetText() tooltip:Hide() if (s == ITEM_SOULBOUND or t == ITEM_SOULBOUND) then return true; else return false; end end return Is_Soulbound(" + container + "," + slot + ")");
+            // End SOULBOUND Check
+            
 			vendorPrice = item.ItemInfo.VendorPrice;
-			soulBound = IsItemSoulbound(item.ItemId);
 			isEquipable = item.ItemInfo.IsEquipable;
 			quality = item.ItemInfo.Quality.ToString();
-			if (soulBound && vendorPrice != 0 && !isEquipable && (quality.Equals("Green") || quality.Equals("Blue")))
+            
+			if (soulBound && vendorPrice != 0 && (quality.Equals("Green") || quality.Equals("Blue")) && ((!isEquipable) || (isEquipable && !IsGearItemForPlayerClass(item.ItemId)) || (isEquipable && IsGearItemForPlayerClass(item.ItemId) && item.ItemInfo.ItemLevel < GetGearSlotItemLevel(item.ItemInfo.EquipSlot.ToString().Substring(item.ItemInfo.EquipSlot.ToString().IndexOf('_') + 1)))))
 			{
 				// Ok, now before adding it to the SELL LIST, let's make sure it's not protected.
 				toAdd = true;
@@ -1113,30 +1144,6 @@ public class Merchant
 						itemsToSell.Add(item.ItemId);
 					}
 				}
-			}
-		}
-		
-		// Gathering all inventory items that are soulbound, a gear item, 5 levels or more below current player level. 
-		bool itemIsTooWeak;
-		int minItemLevel;
-		foreach (var item in ItemList)
-		{
-			vendorPrice = item.ItemInfo.VendorPrice;
-			soulBound = IsItemSoulbound(item.ItemId);
-			isEquipable = item.ItemInfo.IsEquipable;
-			minItemLevel = GetItemMinLevel(item.ItemId);
-			quality = item.ItemInfo.Quality.ToString();
-			if ((API.Me.Level - 3) > minItemLevel && minItemLevel != 0)
-			{
-				itemIsTooWeak = true;
-			}
-			else
-			{
-				itemIsTooWeak = false;
-			}
-			if (soulBound && vendorPrice != 0 && isEquipable && itemIsTooWeak && (quality.Equals("Green") || quality.Equals("Blue")))
-			{
-				itemsToSell.Add(item.ItemId);
 			}
 		}
 		// Note: Since these lists are pulled directly from Rebot, it auto-filters duplicates already
@@ -1170,7 +1177,7 @@ public class Merchant
 	}
 
 	// Method:		"SellLootedItems(List<int>)"
-	public static void SellLootedItems()
+	public static IEnumerable<int> SellLootedItems()
 	{
 		// Initialization check
 		// If I have changed zones, re-initialize.
@@ -1179,7 +1186,7 @@ public class Merchant
 			Initialize();
 		}
 		// Let's count how many Grey Items to Sell
-		int numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1; end; end; end return count");
+		int numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1;  local _,_,_,_,_,_,_,_,_,_, price = GetItemInfo(name); if price == 0 then count = count - 1; end; end; end; end return count");
 		// For future use to sell specific "types" of gear.
 		List<int> itemsToSell = getItemsToSell();
 		if (!IgnoreVendor)
@@ -1198,10 +1205,13 @@ public class Merchant
 				API.Print("Selling:   " + numGrey + " Gray Items...");
 			}
 			// Spams Macro til all greys sold.
-			while (numGrey > 0)
+            int attempts = 0;
+			while (numGrey > 0 && attempts < 15)
 			{
 				API.ExecuteLua("for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then DEFAULT_CHAT_FRAME:AddMessage(\"Selling \"..name); UseContainerItem(bag,slot) end; end; end");
-				numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1; end; end; end return count");
+                numGrey = API.ExecuteLua<int>("local count = 0; for bag = 0,4,1 do for slot = 1, GetContainerNumSlots(bag), 1 do local name = GetContainerItemLink(bag,slot); if name and string.find(name,\"ff9d9d9d\") then count = count + 1; local _,_,_,_,_,_,_,_,_,_, price = GetItemInfo(name); if price == 0 then count = count - 1; end; end; end; end return count");
+                attempts++;
+                yield return 200;
 			}
 			
 			// Sell All "Looted Items"
@@ -1375,7 +1385,6 @@ public class Merchant
 		}
 		if (IsRepairNeeded())
 		{
-			API.Print("test");
 			// The number 2 returns a list of known Repair Vendors, and their locations.
 			List<object> closest = GetClosestMerchant(2);
 			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")))
@@ -1425,10 +1434,14 @@ public class Merchant
 				}
 
 				// Clearing our Loot first
-				SellLootedItems();
+				var selling = new Fiber<int>(SellLootedItems());
+                while(selling.Run())
+                {
+                    yield return 100;
+                }
 				
-				// Destroy any BoP toys in bags that have no vendor value that player already knows.
-				DestroyKnownToys();
+				// Destroy any BoP items that the vendor will not take.
+				DestroyAllUnnecessaryItems();
 				
 				// Repairing
 				Repair();
@@ -1605,10 +1618,14 @@ public class Merchant
 				}
 
 				// Clearing our Loot first
-				SellLootedItems();
+				var selling = new Fiber<int>(SellLootedItems());
+                while(selling.Run())
+                {
+                    yield return 100;
+                }
 				
-				// Destroy any BoP toys in bags that have no vendor value that player already knows.
-				DestroyKnownToys();
+				// Destroy any BoP items that the vendor will not take.
+				DestroyAllUnnecessaryItems();
 				
 				// Repairing
 				Repair();
@@ -1634,6 +1651,7 @@ public class Merchant
 			{
 				container = item.ContainerId; // Establishing bag position
 				slot = item.SlotId;
+                break;
 			}
 		}
 		
@@ -1666,6 +1684,7 @@ public class Merchant
 			{
 				container = item.ContainerId; // Establishing bag position
 				slot = item.SlotId;
+                break;
 			}
 		}
 		
@@ -1680,5 +1699,221 @@ public class Merchant
 		}
 		return result;
 	}
+    
+    // Method:          "IsPlayerAbleToEquipItem(int itemID)"
+    // What it Does:    Returns true if the gear item is equipable to the player's class.
+    // Purpose:         Filtering for vendoring issues.
+    public static bool IsGearItemForPlayerClass(int itemID)
+    {
+        string playerClass = API.Me.Class.ToString();
+        bool result = false;
+        string type = API.ExecuteLua<string>("local _,_,_,_,_,_,subclass = GetItemInfo(" + itemID + "); return subclass;");
+        
+        // All classes can wear trinkets or rings
+        if (type.Equals("Miscellaneous"))
+        {
+            result = true;
+        }
+        else
+        {
+            switch (playerClass)
+            {
+                case "DeathKnight":
+                    if (type.Equals("Plate") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("Two-Handed Swords"))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Demon Hunter":
+                    if (type.Equals("Leather") || type.Equals("Daggers")  || type.Equals("Warglaives") || type.Equals("Fist Weapons") || type.Equals("One-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("One-Handed Axes"))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Druid":
+                    if (type.Equals("Leather") || type.Equals("Daggers") || type.Equals("Fist Weapons") || type.Equals("Polearms") || type.Equals("Staves") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces"))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Hunter":
+                    if (API.Me.Level < 40 && (type.Equals("Leather") || type.Equals("Bows") || type.Equals("Guns") || type.Equals("Crossbows")))
+                    {
+                        result = true;
+                    }
+                    else if (API.Me.Level >= 40 && (type.Equals("Mail") || type.Equals("Bows") || type.Equals("Guns") || type.Equals("Crossbows")))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Mage":
+                    if (type.Equals("Cloth") || type.Equals("Daggers") || type.Equals("Staves") || type.Equals("One-Handed Swords") || type.Equals("Wands"))
+                    {
+                        return true;
+                    }
+                    break;
+                case "Monk":
+                    if (type.Equals("Leather") || type.Equals("Fist Weapons") || type.Equals("Polearms") || type.Equals("Staves") || type.Equals("One-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("One-Handed Axes"))
+                    {
+                        return true;
+                    }
+                    break;
+                case "Paladin":
+                    if (API.Me.Level < 40 && (type.Equals("Mail") || type.Equals("Shields") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("Two-Handed Swords")))
+                    {
+                        result = true;
+                    }
+                    else if (API.Me.Level >= 40 && (type.Equals("Plate") || type.Equals("Shields") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("Two-Handed Swords")))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Priest":
+                    if (type.Equals("Cloth") || type.Equals("Daggers") || type.Equals("Staves") || type.Equals("One-Handed Maces") || type.Equals("Wands"))
+                    {
+                        return true;
+                    }
+                    break;
+                case "Rogue":
+                    if (type.Equals("Leather") || type.Equals("Daggers")  || type.Equals("Bows") || type.Equals("Guns") || type.Equals("Crossbows") || type.Equals("Fist Weapons") || type.Equals("One-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("One-Handed Axes"))
+                    {
+                        return true;
+                    }
+                    break;
+                case "Shaman":
+                     if (API.Me.Level < 40 && (type.Equals("Leather") || type.Equals("Shields") || type.Equals("Daggers") || type.Equals("Fist Weapons") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("Staves")))
+                    {
+                        result = true;
+                    }
+                    else if (API.Me.Level >= 40 && (type.Equals("Mail") || type.Equals("Shields") || type.Equals("Daggers") || type.Equals("Fist Weapons") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("Staves")))
+                    {
+                        result = true;
+                    }
+                    break;
+                case "Warlock":
+                    if (type.Equals("Cloth") || type.Equals("Daggers") || type.Equals("Staves") || type.Equals("One-Handed Swords") || type.Equals("Wands"))
+                    {
+                        return true;
+                    }
+                    break;
+                case "Warrior":
+                    if (API.Me.Level < 40 && (type.Equals("Mail") || type.Equals("Shields") || type.Equals("Bows") || type.Equals("Guns") || type.Equals("Crossbows") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("Two-Handed Swords") || type.Equals("Daggers") || type.Equals("Staves") || type.Equals("Polearms") || type.Equals("Fist Weapons")))
+                    {
+                        result = true;
+                    }
+                    else if (API.Me.Level >= 40 && (type.Equals("Plate") || type.Equals("Shields") || type.Equals("Bows") || type.Equals("Guns") || type.Equals("Crossbows") || type.Equals("One-Handed Axes") || type.Equals("Two-Handed Axes") || type.Equals("One-Handed Maces") || type.Equals("Two-Handed Maces") || type.Equals("One-Handed Swords") || type.Equals("Two-Handed Swords") || type.Equals("Daggers") || type.Equals("Staves") || type.Equals("Polearms") || type.Equals("Fist Weapons")))
+                    {
+                        result = true;
+                    }
+                    break;
+                default:
+                    API.Print("DeBug: Player Class Not Known... Please Report");
+                    break;            
+            }
+        }
+        return result;
+    }
+    
+    
+    // Method:          "GetGearSlotItemLevel(string slot)"
+    // What it Does:    Returns the itemLevel of the given equipment slot as an int.
+    // Purpose          Assist in filtering gear upgrades and vendor options.
+    //                  Note: The formatting is as such for the argument: "HEAD", "SHOULDER", "CHEST", "TRINKET", "FINGER" and so on... 
+    //                  the trinket and the ring both return the slot with the lowest iLvl to be weight against.
+    public static int GetGearSlotItemLevel(string slot)
+    {
+        int itemLevel = -1; // So as not to sell if unable to identify. For safety.
+        int trinketLevel = -1;
+        int trinkCount = 0;
+        int ringLevel = -1;
+        int ringCount = 0;
+        foreach (var item in Equip.Items)
+        {
+            if (item.ItemInfo.EquipSlot.ToString().Substring(item.ItemInfo.EquipSlot.ToString().IndexOf('_') + 1).Equals(slot))
+            {
+                if (slot.Equals("TRINKET"))                     // 2 Trinket slots to parse through...
+                {
+                    if (trinketLevel > item.ItemInfo.ItemLevel || trinketLevel == -1)
+                    {
+                        trinketLevel = item.ItemInfo.ItemLevel; // This ultimately gives me the lowest trinket ilvl
+                        trinkCount++;
+                        if (trinkCount == 2)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if (slot.Equals("FINGER"))                     // 2 Ring slots to parse through...
+                {
+                    if (ringLevel > item.ItemInfo.ItemLevel || ringLevel == -1)
+                    {
+                        ringLevel = item.ItemInfo.ItemLevel; // This ultimately gives me the lowest Ring ilvl
+                        ringCount++;
+                        if (ringCount == 2)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else if (trinketLevel == -1 && ringLevel == -1)
+                {
+                    itemLevel = item.ItemInfo.ItemLevel;
+                    break;
+                }
+            }
+        }
+        if (trinketLevel != -1)
+        {
+            itemLevel = trinketLevel;
+        }
+        else if (ringLevel != -1)
+        {
+            itemLevel = ringLevel;
+        }
+        return itemLevel;
+    }
+    
+    // Method:          "DestroyAllUnnecessaryItems()"
+    // What it Does:    Deletes items that are not vendorable but are otherwise not useful, like toys the player already knows.
+    // Purpose:         To assist with the leaning out of bags and cleaning up of bags.
+    public static void DestroyAllUnnecessaryItems()
+    {
+        Inventory.Refresh();
+        // Conditions to establish so only one loop through inventory is necessary.
+        string quality;
+		int vendorPrice;
+        int container;
+        int slot;
+        bool isEquipable;
+		bool playerHasToy;
+        bool isToy = false;
+        bool soulBound = false;
+        // The inventory stored in memory.
+		var ItemList = Inventory.Items;
+        
+		// Items to Destroy - Toys that are soulbound, already known, and not vendorable.
+		foreach (var item in ItemList)
+		{
+            container = item.ContainerId; // Establishing bag position
+            slot = item.SlotId;
+            // Parsing through the item tooltip since no available API
+            soulBound = API.ExecuteLua<bool>("local tooltip; local function create() local tip, leftside = CreateFrame(\"GameTooltip\"), {} for i = 1, 3 do local L,R = tip:CreateFontString(), tip:CreateFontString() L:SetFontObject(GameFontNormal) R:SetFontObject(GameFontNormal) tip:AddFontStrings(L,R) leftside[i] = L end tip.leftside = leftside return tip end; local function Is_Soulbound(bag, slot) tooltip = tooltip or create() tooltip:SetOwner(UIParent,\"ANCHOR_NONE\") tooltip:ClearLines() tooltip:SetBagItem(bag, slot) local s = tooltip.leftside[2]:GetText() local t = tooltip.leftside[3]:GetText() tooltip:Hide() if (s == ITEM_SOULBOUND or t == ITEM_SOULBOUND) then return true; else return false; end end return Is_Soulbound(" + container + "," + slot + ")");
+
+            isToy = API.ExecuteLua<bool>("local tooltip; local function create() local tip, leftside = CreateFrame(\"GameTooltip\"), {} for i = 1, 5 do local L,R = tip:CreateFontString(), tip:CreateFontString() L:SetFontObject(GameFontNormal) R:SetFontObject(GameFontNormal) tip:AddFontStrings(L,R) leftside[i] = L end tip.leftside = leftside return tip end; local function Is_Toy(bag, slot) tooltip = tooltip or create() tooltip:SetOwner(UIParent,\"ANCHOR_NONE\") tooltip:ClearLines() tooltip:SetBagItem(bag, slot) local s = tooltip.leftside[2]:GetText() local t = tooltip.leftside[3]:GetText() u = tooltip.leftside[4]:GetText() tooltip:Hide() if (s == TOY or t == TOY or u == TOY) then return true; else return false; end end return Is_Toy(" + container + "," + slot + ")");
+			// Gear items that have no value
+			vendorPrice = item.ItemInfo.VendorPrice;
+			isToy = IsItemAToy(item.ItemId);
+            isEquipable = item.ItemInfo.IsEquipable;
+			quality = item.ItemInfo.Quality.ToString();
+			playerHasToy = API.ExecuteLua<bool>("return PlayerHasToy(" + item.ItemId + ")");
+
+			if ((soulBound || (item.ItemId == 112449 || item.ItemId == 108920)) && vendorPrice == 0 && (quality.Equals("Green") || quality.Equals("Blue") || quality.Equals("Gray") || quality.Equals("White")) && ((isToy && playerHasToy) || (isEquipable && !IsGearItemForPlayerClass(item.ItemId)) || (isEquipable && IsGearItemForPlayerClass(item.ItemId) && item.ItemInfo.ItemLevel < GetGearSlotItemLevel(item.ItemInfo.EquipSlot.ToString().Substring(item.ItemInfo.EquipSlot.ToString().IndexOf('_') + 1))) || (quality.Equals("Gray")) || (API.Me.Level > 90 && (item.ItemId == 112449 || item.ItemId == 108920))   ))
+			{
+				// Destroy the item...
+				API.Print("Destroying the Following Item:  " + item.Name);
+				API.DeleteItem(item.ItemId);
+			}
+		}
+    }
 }
 
