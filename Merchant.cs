@@ -50,6 +50,9 @@ public class Merchant
 	// Eventual ID of the food/water player will purchase from the vendor.
 	public static int FoodIDToBuy;
 	public static int DrinkIDToBuy;
+    
+    // Protected Specialty items to add on initialization (Like low ilvl gear items that improve gathering)
+    public static int[] SpecialItemsProtected = new int[] {116913,116916,86566,85777};
 
 
 	// Default Constructor
@@ -98,7 +101,39 @@ public class Merchant
 		// Ensure all food/drink items in inventory are established to be used.
 		setUsableFood();
 		setUsableWater();
+        
+        // Protect Specialized Items
+        AddProtectedItems(SpecialItemsProtected);
 	}
+    
+    // Method:          "AddProtectedItems(int[])"
+    //                  Basically adds a list of protected items.
+    public static void AddProtectedItems(int[] itemsList)
+    {
+        bool toAdd;
+        int count = 0;
+        foreach (int protItem in itemsList)
+        {
+            toAdd = true;
+            foreach (int protectedID in API.GlobalBotSettings.ProtectedItemIds)
+			{
+				if (protectedID == protItem)
+				{
+					toAdd = false;
+                    break;
+				}
+			}
+			if (toAdd)
+			{
+				API.GlobalBotSettings.ProtectedItemIds.Add(protItem);
+                count++;
+			}
+        }
+        if (count > 0)
+        {
+            API.Print("The Player Added " + count + " Speciality Items to the Protected List to Keep Safe From Vendoring.");
+        }
+    }
 
 	// Method:			"BlacklistNPC(int)"
 	// 					Uses the NPCs default List "GlobalBotSettings.DestroyItemIds" as a collection of NPCs RemoveBlacklistedVendors
