@@ -52,6 +52,7 @@ public class DraenorMerchants {
 
             // Nagrand (and phased caves)
             if (zoneID == 6755 || zoneID == 7124 || zoneID == 7203 || zoneID == 7204 || zoneID == 7267) {
+                IsSpecialPathingNeeded = true;
                 return getNagrand(factionIsHorde,vendorType);
             }
 
@@ -688,7 +689,60 @@ public class DraenorMerchants {
             //
             else if (zoneID == 6721 || zoneID == 6885 || zoneID == 7160 || zoneID == 7185)
             {
-                List<object> result = Merchant.GetClosestMerchant(Merchant.getAllVendors());;
+                List<object> result = Merchant.GetClosestMerchant(Merchant.getAllVendors());
+                Vector3 tangleheart1 = new Vector3(6061.0f, 96.4f, 48.1f);
+                Vector3 tangleheart2 = new Vector3(6056.4f, 95.9f, 47.9f);
+                Vector3 tangleheart3 = new Vector3(5954.9f, 132.4f, 55.2f);
+                Vector3 tangleheart4 = new Vector3(5977.6f, 73.6f, 53.1f);
+                Vector3 tangleheart5 = new Vector3(6038.7f, 93.1f, 48.0f);
+                Vector3 tangleheart6 = new Vector3(6054.0f, 98.8f, 47.7f);
+                Vector3 tangleheart7 = new Vector3(5788.9f, 1273.9f, 108.5f);
+                
+                // Pathing to use the MOLE machine if in vicinity of the area.
+                if (Merchant.API.Me.Distance2DTo(tangleheart1) < 300)
+                {
+                    if (Merchant.API.Me.Distance2DTo(tangleheart2) > 40)
+                    {
+                        while(!Merchant.API.MoveTo(tangleheart3))
+                        {
+                            yield return 100;
+                        }
+                        while(!Merchant.API.MoveTo(tangleheart4))
+                        {
+                            yield return 100;
+                        }
+                        while(!Merchant.API.MoveTo(tangleheart5))
+                        {
+                            yield return 100;
+                        }
+                    }
+                    while(!Merchant.API.MoveTo(tangleheart6))
+                    {
+                        yield return 100;
+                    }
+                    foreach (var unit in Merchant.API.GameObjects)
+                    {
+                        if (unit.EntryID == 234425)
+                        {
+                            while (Merchant.API.Me.Distance2DTo(unit.Position) > 10)
+                            {
+                                Merchant.API.MoveTo(unit.Position);
+                                yield return 100;
+                                if (Merchant.API.Me.Distance2DTo(unit.Position) <= 10)
+                                {
+                                    Merchant.API.MoveToStop();
+                                }
+                            }
+                            yield return 1000;
+                            while (Merchant.API.Me.Distance2DTo(tangleheart7) > 50)
+                            {
+                                unit.Interact();
+                                yield return 2500;
+                            }
+                        }
+                    }
+                }
+                
                 // Beastwatch Vendor... move around the mill.
                 if ((int)result[2] == 82732) 
                 {
@@ -805,6 +859,293 @@ public class DraenorMerchants {
                 }
             }
             // End Talador
+            
+            // NAGRAND SPECIAL PATHING!
+            //
+            // BEGIN
+            else if (zoneID == 6755 || zoneID == 7124 || zoneID == 7203 || zoneID == 7204 || zoneID == 7267)
+            {
+                // Location 1
+                // Overwatch Summit - near Treasure
+                Vector3 overwatch1 = new Vector3(1902.1f, 4714.6f, 364.3f);
+                if (Merchant.API.Me.Distance2DTo(overwatch1) < 15)
+                {
+                    while(!Merchant.API.CTM(1899.0f, 4692.9f, 353.5f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(1920.5f, 4662.5f, 335.9f))
+                    {
+                        yield return 100;
+                    }
+                }
+                
+                // Location 2
+                // Overwatch Summit - Taking portal to the bottom
+                Vector3 overwatch2 = new Vector3(1975.5f, 4683.9f, 335.9f);
+                if (Merchant.API.Me.Distance2DTo(overwatch2) < 100)
+                {
+                    Merchant.API.Print("Since You Are at the Overwatch Summit, Let's Take the Portal to the Bottom...");
+                    while(!Merchant.API.MoveTo(1972.1f, 4702.8f, 335.9f))
+                    {
+                        yield return 100;
+                    }
+                    
+                    // Brief Pause for Aggro
+                    yield return 2000;
+                    foreach (var unit in Merchant.API.GameObjects)
+                    {
+                        if (unit.EntryID == 232562)
+                        {
+                            while(!Merchant.API.MoveTo(unit.Position))
+                            {
+                                yield return 100;
+                            }
+                            unit.Interact();
+                            yield return 2500;
+                            break;
+                        }
+                    }
+                    yield break;
+                }
+                
+                // Location 3
+                // Near Rare Berserk T-300 Series Mark II
+                Vector3 berserk = new Vector3(2486.7f, 4941.1f, 233.8f);
+                if (Merchant.API.Me.Distance2DTo(berserk) < 20)
+                {
+                    while(!Merchant.API.CTM(2466.9f, 4889.6f, 206.3f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 4
+                // Out of Lower Sabermaw - avoid some wonky mesh issues.
+                Vector3 saber1 = new Vector3(2610.7f, 5124.4f, 101.3f);
+                Vector3 saber2 = new Vector3(2488.1f, 5051.6f, 216.1f);
+                Vector3 saber3 = new Vector3(2579.7f, 5007.9f, 166.7f);
+                Vector3 saber4 = new Vector3(2609.3f, 5177.9f, 194.6f);
+                Vector3 saber5 = new Vector3(2588.2f, 4994.5f, 181.6f);
+                Vector3 saber7 = new Vector3(2578.0f, 5160.2f, 203.9f);
+                if (Merchant.API.Me.Distance2DTo(saber1) < 100 && !(Merchant.API.Me.Distance2DTo(saber2) < 50 || Merchant.API.Me.Distance2DTo(saber3) < 15 
+                || Merchant.API.Me.Distance2DTo(saber4) < 30 || Merchant.API.Me.Distance2DTo(saber5) < 15 || (Merchant.API.Me.Distance2DTo(saber7) < 50 && (Merchant.API.Me.Position.Z > 180))))
+                {
+                    while(!Merchant.API.MoveTo(2603.9f, 5281.5f, 135.3f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 5
+                // Out of Upper Sabermaw 1
+                Vector3 saber6 = new Vector3(2579.7f, 5007.9f, 166.7f);
+                if (Merchant.API.Me.Distance2DTo(saber6) < 10)
+                {
+                    while(!Merchant.API.MoveTo(2566.0f, 5015.8f, 177.6f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2588.2f, 4994.5f, 181.6f))
+                    {
+                        yield return 100;
+                    }
+                }
+                
+                // Location 6
+                // Out of Upper Sabermaw 2
+                if (Merchant.API.Me.Distance2DTo(saber2) < 50 || Merchant.API.Me.Distance2DTo(saber3) < 15 || Merchant.API.Me.Distance2DTo(saber4) < 30 
+                || Merchant.API.Me.Distance2DTo(saber5) < 15 || (Merchant.API.Me.Distance2DTo(saber7) < 50 && (Merchant.API.Me.Position.Z > 180)))
+                {
+                    Merchant.API.Print("The Upper Sabermaw Area Mesh is Troublesome... Navigating a better way out.");
+                    while(!Merchant.API.MoveTo(2606.5f, 5174.1f, 195.8f))
+                    {
+                        yield return 100;
+                    }
+                    yield return 1000;
+                    Merchant.API.DisableCombat = true;
+                    Merchant.API.MountUp();
+                    yield return 2000;
+                    while(!Merchant.API.MoveTo(2577.5f, 5190.9f, 197.2f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2531.8f, 5192.2f, 184.4f))
+                    {
+                        yield return 100;
+                    }
+                    yield return 1000;
+                    Merchant.API.DisableCombat = false;
+                    yield break;
+                }
+                
+                // Location 7
+                // Move Away from Treasure "Abandoned Cargo"
+                Vector3 cargo = new Vector3(2641.4f, 5469f, 81.7f);
+                if (Merchant.API.Me.Distance2DTo(cargo) < 40)
+                {
+                    while(!Merchant.API.MoveTo(2680.5f, 5504.5f, 87.3f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 8
+                // Move off of the slope
+                Vector3 ledge1 = new Vector3(2435.9f, 5637.3f, 168.4f);
+                if (Merchant.API.Me.Distance2DTo(ledge1) < 6)
+                {
+                    while(!Merchant.API.CTM(2426.8f, 5614.8f, 153.0f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 9
+                // Move off of the ledge
+                Vector3 ledge2 = new Vector3(2610.4f, 5571.5f, 90.4f);
+                if (Merchant.API.Me.Distance2DTo(ledge2) < 15)
+                {
+                    Merchant.API.Print("Wow, What are You Doing Up On This Ledge? Jumping Off...");
+                    while(!Merchant.API.CTM(2632.6f, 5560.8f, 74.9f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2642.8f, 5540.5f, 74.9f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2649.0f, 5533.3f, 80.1f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2642.9f, 5499.3f, 81.9f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.MoveTo(2688.6f, 5493.2f, 88.0f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 10
+                // Spiteleaf Thicket
+                Vector3 SpiteLeaf = new Vector3(4016.6f, 4556.8f, 46.3f);
+                if (Merchant.API.Me.Distance2DTo(SpiteLeaf) < 75)
+                {
+                    Merchant.API.Print("Let's Get Out of this Cave...");
+                    while(!Merchant.API.CTM(4019.9f, 4560.1f, 44.0f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(4005.4f, 4544.1f, 57.4f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(3997.4f, 4534.2f, 66.1f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 11
+                // Dirgemire
+                Vector3 dirge1 = new Vector3(4271.1f, 4513.2f, -35.5f);
+                Vector3 dirge2 = new Vector3(4280.5f, 4487.6f, 7.1f);
+                if (Merchant.API.Me.Distance2DTo(dirge1) < 50 && !(Merchant.API.Me.Distance2DTo(dirge2) < 20))
+                {
+                    while(!Merchant.API.MoveTo(4281.9f, 4499.6f, -36.0f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.MoveTo(4274.1f, 4490.7f, -37.1f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.MoveTo(4311.4f, 4392.9f, -56.7f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.MoveTo(4267.2f, 4425.4f, 1.0f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 12
+                // Ironbeard's ship
+                Vector3 beard1 = new Vector3(2014.0f, 7361.9f, 18.4f);
+                if (Merchant.API.Me.Distance2DTo(beard1) < 50)
+                {
+                    while(!Merchant.API.MoveTo(2008.7f, 7343.1f, 18.6f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2017.3f, 7315.6f, -1.5f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2106.0f, 7140.9f, 0.8f))
+                    {
+                        yield return 100;
+                    }
+                    yield break;
+                }
+                
+                // Location 13
+                // Exit Tower
+                Vector3 tower1 = new Vector3(2037.9f, 7012.4f, 51.1f);
+                if (Merchant.API.Me.Distance2DTo(tower1) < 10)
+                {
+                    Merchant.API.DisableCombat = true;
+                    while(!Merchant.API.CTM(2032.4f, 7004.9f, 51.2f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2025.8f, 7015.4f, 44.6f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2037.8f, 7021.4f, 33.4f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2044.4f, 7010.3f, 27.3f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2035.3f, 7002.9f, 27.5f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2027.6f, 7019.1f, 15.1f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2032.9f, 7022.0f, 15.2f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2032.0f, 7021.3f, 15.3f))
+                    {
+                        yield return 100;
+                    }
+                    while(!Merchant.API.CTM(2047.6f, 7003.3f, 15.2f))
+                    {
+                        yield return 100;
+                    }
+                    Merchant.API.DisableCombat = false;
+                    yield break;
+                }
+            }
             
             // Enter any additional pathing.
             yield break;
