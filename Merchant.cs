@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Localization.cs" class
 |   For use in collaboration with the Rebot API 
 |
-|   Last Update: January 7th, 2016
+|   Last Update: June 1st, 2016
 */
 
 public class Merchant
@@ -571,7 +571,7 @@ public class Merchant
 
 			// Setting the initial Merchant to the closest distance
 			closestVector3 = new Vector3((float)vendor[0], (float)vendor[1], (float)vendor[2]);
-			closestDistance = API.Me.Distance2DTo(closestVector3);
+			closestDistance = API.Me.Position.Distance(closestVector3);
 			npcID = (int)vendor[3];
 			IsSpecialPathingNeeded = (bool)vendor[4];
 
@@ -580,7 +580,7 @@ public class Merchant
 			{
 				// Setting first values
 				position = new Vector3((float)vendor[i], (float)vendor[i + 1], (float)vendor[i + 2]);
-				tempDistance = API.Me.Distance2DTo(position);
+				tempDistance = API.Me.Position.Distance(position);
 				// Changing values if new ones are closer
 				if (tempDistance < closestDistance)
 				{
@@ -623,7 +623,7 @@ public class Merchant
 
 			// Setting the initial Merchant to the closest distance
 			closestVector3 = new Vector3((float)vendor[0], (float)vendor[1], (float)vendor[2]);
-			closestDistance = API.Me.Distance2DTo(closestVector3);
+			closestDistance = API.Me.Position.Distance(closestVector3);
 			npcID = (int)vendor[3];
 			IsSpecialPathingNeeded = (bool)vendor[4];
 
@@ -632,7 +632,7 @@ public class Merchant
 			{
 				// Setting first values
 				position = new Vector3((float)vendor[i], (float)vendor[i + 1], (float)vendor[i + 2]);
-				tempDistance = API.Me.Distance2DTo(position);
+				tempDistance = API.Me.Position.Distance(position);
 				// Changing values if new ones are closer
 				if (tempDistance < closestDistance)
 				{
@@ -674,7 +674,7 @@ public class Merchant
     //                  the vendor window is open, and if it is not yet open, parsing through gossip options and selecting the correct one.
 	public static bool IsVendorOpen()
 	{
-		return API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); if name ~= nil then return true else return false end;");
+		return API.ExecuteLua<bool>("local name = GetMerchantItemInfo(1); local canRepair = CanMerchantRepair(); if name ~= nil or canRepair == true then return true else return false end;");
 	}
 
 	// Method:          "MerchantGossip()"
@@ -1460,24 +1460,21 @@ public class Merchant
 						yield return 100;
 					}
 				}
-
 				// Interacting with Merchant
 				var check2 = new Fiber<int>(InteractWithMerchant());
 				while (check2.Run())
 				{
 					yield return 100;
 				}
-
 				// Clearing our Loot first
 				var selling = new Fiber<int>(SellLootedItems());
                 while(selling.Run())
                 {
                     yield return 100;
                 }
-				
 				// Destroy any BoP items that the vendor will not take.
 				DestroyAllUnnecessaryItems();
-				
+
 				// Repairing
 				Repair();
 
@@ -1602,73 +1599,81 @@ public class Merchant
 		}
 		if (InventoryIsFull())
 		{
-			// The number 2 returns a list of known Repair Vendors, and their locations.
-			List<object> closest = GetClosestMerchant(getAllVendors());
-			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")))
+			var check = new Fiber<int>(ClearBagsAtVendor());
+			while(check.Run())
 			{
-				if (HasRepairMount())
-				{
-					yield return 1000; // 1 second delay to stop player from moving.
-					UseRepairMount();
-					yield return 2000; // Delay for vendors to Appears.
-										// Identifying Vendor for Chosen Mount
-					int unitID = 0;
-					// Tundra NPC
-					if (API.HasAura(61447))
-					{
-						unitID = 32641;
-					}
-					// YAK NPC
-					else if (API.HasAura(122708))
-					{
-						unitID = 62822;
-					}
-					// Setting focus to the vendor.
-					foreach (var unit in API.Units)
-					{
-						if (unit.EntryID == unitID)
-						{
-							API.Me.SetFocus(unit);
-							API.Me.SetTarget(unit);
-							break;
-						}
-					}
-				}
-				else
-				{
-					API.Print("Player's Inventory is Full! Heading to nearest Vendor!");
-					// Identifying Merchant and moving to it.
-					var check = new Fiber<int>(MoveToMerchant(closest));
-					while (check.Run())
-					{
-						yield return 100;
-					}
-				}
+				yield return 100;
+			}
+				
+			// Destroy any BoP items that the vendor will not take.
+			DestroyAllUnnecessaryItems();
+			
+			// Repairing
+			Repair();
 
-				// Interacting with Merchant
-				var check2 = new Fiber<int>(InteractWithMerchant());
-				while (check2.Run())
+			API.ExecuteLua("CloseMerchant()");
+		}
+		yield break;
+	}
+	
+	public static IEnumerable<int> ClearBagsAtVendor()
+	{
+		List<object> closest = GetClosestMerchant(getAllVendors());
+		if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")))
+		{
+			if (HasRepairMount())
+			{
+				yield return 1000; // 1 second delay to stop player from moving.
+				UseRepairMount();
+				yield return 2000; // Delay for vendors to Appears.
+									// Identifying Vendor for Chosen Mount
+				int unitID = 0;
+				// Tundra NPC
+				if (API.HasAura(61447))
+				{
+					unitID = 32641;
+				}
+				// YAK NPC
+				else if (API.HasAura(122708))
+				{
+					unitID = 62822;
+				}
+				// Setting focus to the vendor.
+				foreach (var unit in API.Units)
+				{
+					if (unit.EntryID == unitID)
+					{
+						API.Me.SetFocus(unit);
+						API.Me.SetTarget(unit);
+						break;
+					}
+				}
+			}
+			else
+			{
+				API.Print("Player's Inventory is Full! Heading to nearest Vendor!");
+				// Identifying Merchant and moving to it.
+				var check = new Fiber<int>(MoveToMerchant(closest));
+				while (check.Run())
 				{
 					yield return 100;
 				}
+			}
 
-				// Clearing our Loot first
-				var selling = new Fiber<int>(SellLootedItems());
-                while(selling.Run())
-                {
-                    yield return 100;
-                }
-				
-				// Destroy any BoP items that the vendor will not take.
-				DestroyAllUnnecessaryItems();
-				
-				// Repairing
-				Repair();
+			// Interacting with Merchant
+			var check2 = new Fiber<int>(InteractWithMerchant());
+			while (check2.Run())
+			{
+				yield return 100;
+			}
 
-				API.ExecuteLua("CloseMerchant()");
+			// Clearing our Loot first
+			var selling = new Fiber<int>(SellLootedItems());
+			while(selling.Run())
+			{
+				yield return 100;
 			}
 		}
-		yield break;
 	}
 	
 	// Method:          "IsItemSoulbound(int)"
@@ -1951,4 +1956,3 @@ public class Merchant
 		}
     }
 }
-
