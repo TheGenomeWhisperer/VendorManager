@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Merchant.cs"
 |	For use in collaboration with the Rebot API
 |
-|   Last Update: June 1st, 2016
+|   Last Update: June 4th, 2016
 */
 
 
@@ -861,6 +861,7 @@ public class DraenorMerchants {
                     yield return 100;
                 }
                 Merchant.API.Print("Let's Get to that Vendor and Get Out of Here!");
+                SpecialPathingReturnIndex = 3;
                 yield break;
             }
             
@@ -996,6 +997,11 @@ public class DraenorMerchants {
                 }
                 yield return 1000;
                 Merchant.API.DisableCombat = false;
+                // As long as I still haven't gotten the final treasure, return to upper sabermaw.
+                if (!Merchant.API.IsQuestCompleted(36035))
+                {
+                    SpecialPathingReturnIndex = 4;
+                }
                 yield break;
             }
             
@@ -1012,7 +1018,7 @@ public class DraenorMerchants {
             }
             
             // Location 8
-            // Move off of the slope
+            // Move off of the slope where Ring was
             Vector3 ledge1 = new Vector3(2435.9f, 5637.3f, 168.4f);
             if (Merchant.API.Me.Position.Distance(ledge1) < 6)
             {
@@ -1024,7 +1030,7 @@ public class DraenorMerchants {
             }
             
             // Location 9
-            // Move off of the ledge
+            // Move off of the ledge where Abu'gars pole was
             Vector3 ledge2 = new Vector3(2610.4f, 5571.5f, 90.4f);
             if (Merchant.API.Me.Position.Distance(ledge2) < 15)
             {
@@ -1069,6 +1075,10 @@ public class DraenorMerchants {
                 while(!Merchant.API.CTM(3997.4f, 4534.2f, 66.1f))
                 {
                     yield return 100;
+                }
+                if (!Merchant.API.IsQuestCompleted(35146) && !Merchant.API.IsQuestInLogAndComplete(35146))
+                {
+                    SpecialPathingReturnIndex = 5;
                 }
                 yield break;
             }
@@ -1198,10 +1208,108 @@ public class DraenorMerchants {
         // Gordal Fortress
         if (ID == 2)
         {
+            Merchant.API.Print("Returning to Gordal Fortress!");
+            while(!Merchant.API.MoveTo(1659.723f, 1736.249f, 297.5785f))
+            {
+                yield return 100;
+            }
+            yield return 5000;
+            Merchant.API.DisableCombat = true;
+            while(!Merchant.API.MoveTo(1659.723f, 1736.249f, 297.5785f))
+            {
+                yield return 100;
+            }
+            foreach (var unit in Merchant.API.GameObjects)
+            {
+                if(unit.EntryID == 230949)
+                {
+                    unit.Interact();
+                }
+            }
+            yield return 500;
             
+            while (Merchant.API.Me.IsOnTransport)
+            {
+                yield return 100;
+            }
+            yield return 1000;
+            Merchant.API.DisableCombat = false;
         }
         
+        // Back to Shattrath
+        if (ID == 3)
+        {
+            Merchant.API.Print("Let's go Take the Elevator Back Down...");
+            var check = new Fiber<int>(TakeElevator(231934,7,2682.8f,2995.0f,233.9f,2687.2f,3017.5f,69.5f));
+            while (check.Run()) 
+            {
+                yield return 100;
+            }
+        }
         
+        // END TALADOR
+        
+        // START NAGRAND
+        // Back to Upper Sabermaw 
+        if (ID == 4)
+        {
+            Merchant.API.Print("Returning To Upper Sabermaw...");
+            while(!Merchant.API.MoveTo(2411.734f, 5101.037f, 217.3473f))
+            {
+                yield return 100;
+            }
+            Merchant.API.DisableCombat = true;
+            while(!Merchant.API.CTM(2420.37f, 5114.625f, 216.1309f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2428.048f, 5117.357f, 220.568f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2426.856f, 5120.338f, 219.4278f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2434.015f, 5122.625f, 224.5984f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2453.498f, 5142.923f, 223.3318f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2480.328f, 5157.041f, 213.0495f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(2493.306f, 5141.176f, 203.2925f))
+            {
+                yield return 100;
+            }
+            Merchant.API.DisableCombat = false;
+        }
+        
+        // Back to Spiteleaf Thicket
+        if (ID == 5)
+        {
+            Merchant.API.Print("Destination: Spiteleaf Thicket.");
+            while(!Merchant.API.MoveTo(3996.984f, 4533.09f, 65.991f))
+            {
+                yield return 100;
+            }
+            yield return 3500;
+            while(!Merchant.API.MoveTo(3999.377f, 4537.303f, 65.43436f))
+            {
+                yield return 100;
+            }
+            while(!Merchant.API.CTM(4018.364f, 4557.611f, 45.2537f))
+            {
+                yield return 100;
+            }
+        }
+        
+        // Reset Index
         SpecialPathingReturnIndex = 0;
         yield break;
     }
@@ -1222,9 +1330,10 @@ public class DraenorMerchants {
     //                  Also, the position you would like the player to exit the elevator and travel to.  The travel time
     //                  was kind of a rough solution because it appears that while on the elevator, the API freezes all return values
     //                  thus I cannot seem to get an accurate positional check, so the timing allows me to enter, then determine exit time.
-    public static IEnumerable<int> TakeElevator(int ElevatorID, int elevatorTravelTime, float startX, float startY, float startZ, float x, float y, float z)  {
-        double position;
-        double position2;
+    public static IEnumerable<int> TakeElevator(int ElevatorID, int elevatorTravelTime, float startX, float startY, float startZ, float x, float y, float z)
+    {
+        int position;
+        int position2;
         bool elevatorFound = false;
         // Starting position to navigate to and wait for elevator (PLACE AT SAME LEVEL AS Elevator)
         Vector3 start = new Vector3(startX,startY,startZ);
@@ -1247,17 +1356,22 @@ public class DraenorMerchants {
                 Merchant.API.Print("Waiting For the Elevator...");
                 
                 // Checking initial position of the elevator.
-                position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                yield return 100;
-                position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                yield return 100;
+                position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                yield return 250;
+                position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                yield return 250;
                 
-                // Some Added Redundancy to not attempt to take the elevator if it just arrived
+                // Some Added Redundancy to not attempt to take the qelevator if it just arrived
                 // Lest you try to hop on right before it moves away.
-                while (Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit)) <= 20.0) {
+                while ((int) Merchant.API.Me.Position.Distance(unit.Position) <= 20) {
                     yield return 100;
                 }
                 
+                // reset values
+                position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                yield return 250;
+                position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                yield return 250;
                 // The two positional checks right after each other are to determine movement of the elevator.
                 // if they are equal, elevator is not moving, but if they are different, like the second location is further than the first,
                 // then it can easily be determined it is moving away from you.
@@ -1267,13 +1381,13 @@ public class DraenorMerchants {
                 // traverse then ends up missing it.  This just helps avoid that... Long explanation I know.
                 while (position == position2)
                 {
-                    position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                    yield return 100;
-                    position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                    yield return 100;
+                    position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                    yield return 250;
+                    position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                    yield return 250;
                 }
                 // Meaning it is moving away from you or it is at least 10 yrds away.
-                if (position != position2 || Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit)) > 10.0) 
+                if (position != position2 || (int)Merchant.API.Me.Position.Distance(unit.Position) > 10) 
                 {
                     Merchant.API.Print("Elevator is Moving...");
                     if (position > position2) 
@@ -1285,41 +1399,38 @@ public class DraenorMerchants {
                         Merchant.API.Print("Elevator is Moving Away! Patience!");
                         while(position != position2) 
                         {
-                            position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                            yield return 100;
-                            position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                            yield return 100;
+                            position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                            yield return 250;
+                            position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                            yield return 250;
                         }
                         Merchant.API.Print("Elevator Has Stopped at Other Side.  Let's Wait For It To Return!");
                         while(position == position2) 
                         {
-                            position = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                            yield return 100;
-                            position2 = Math.Sqrt(Merchant.API.Me.DistanceSquaredTo(unit));
-                            yield return 100;
+                            position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                            yield return 250;
+                            position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                            yield return 250;
                         }
                         Merchant.API.Print("Alright, It Is Coming Back to us. Get Ready!");
                     }
                     // Checking position of elevator against your current position.
-                    if (Merchant.API.Me.Position.Z < unit.Position.Z)
+                    while((int)Merchant.API.Me.Position.Distance(unit.Position) > 20) 
                     {
-                        while(unit.Position.Z > (startZ + 1.0)) 
-                        {
-                            yield return 100;
-                        }
+                        yield return 250;
                     }
-                    else if (Merchant.API.Me.Position.Z > unit.Position.Z)
+                    while(position != position2)
                     {
-                        while(unit.Position.Z < (startZ - 1.0)) 
-                        {
-                            yield return 100;
-                        }
+                        position = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                        yield return 250;
+                        position2 = (int) Merchant.API.Me.Position.Distance(unit.Position);
+                        yield return 250;
                     }
                 }
                 Merchant.API.Print("Ah, Excellent! Elevator is Here! Hop On Quick!");
                 Merchant.API.CTM(unit.Position);
                 // The 4 seconds is added here to account for the stoppage of when you enter the elevator and it is stationary
-                yield return ((elevatorTravelTime + 4) * 1000);
+                yield return ((elevatorTravelTime + 3) * 1000);
                 while(!Merchant.API.CTM(destination)) 
                 {
                     yield return 200;

@@ -4,7 +4,7 @@
 |   To Be Used with "InsertContinentName.cs" and "Localization.cs" class
 |   For use in collaboration with the Rebot API 
 |
-|   Last Update: June 1st, 2016
+|   Last Update: June 4th, 2016
 */
 
 public class Merchant
@@ -502,6 +502,7 @@ public class Merchant
 		// This is where to add special pathing considerations.
 		if (IsSpecialPathingNeeded)
 		{
+			// Draenor Continent
 			if (API.Me.ContinentID == 1116 || API.Me.ContinentID == 1265)
 			{
 				var check = new Fiber<int>(DraenorMerchants.doSpecialPathing());
@@ -652,6 +653,12 @@ public class Merchant
 	// Method:		"InteractWithMerchant()"
 	public static IEnumerable<int> InteractWithMerchant()
 	{
+		var test = new Fiber<int>(DraenorMerchants.DoSpecialReturnPathing());
+		while(test.Run())
+		{
+			yield return 100;
+		}
+		
 		if (API.Me.Focus != null)
 		{
 			while (!IsVendorOpen())
@@ -994,6 +1001,9 @@ public class Merchant
 			List<object> closest = GetClosestMerchant(1);
 			if (closest.Count > 0)
 			{
+				// To be used on ensuring a need to do special pathing on return.
+				Vector3 currentPosition = API.Me.Position;
+				
 				API.Print("Player is Low on Refreshments! Heading to Restock!!!");
 				// Identifying Merchant and moving to it.
 				var check = new Fiber<int>(MoveToMerchant(closest));
@@ -1052,6 +1062,30 @@ public class Merchant
 				}
 				API.Print("The Player is Fully Stocked and Ready to Go. Let's Get Back to Work!!!");
 				API.ExecuteLua("CloseMerchant()");
+				
+				// Special return pathing considerations
+				// Note, this will only under 2 conditions, player has moved a distance away, and 
+				// DraenorMerchants.SpecialPathingReturnIndex != 0
+				if (API.Me.Position.Distance(currentPosition) > 50)
+				{
+					int contID = API.Me.ContinentID;
+					// Draenor Continent
+					if (contID == 1116 || contID == 1265)
+					{
+						var check6 = new Fiber<int>(DraenorMerchants.DoSpecialReturnPathing());
+						while (check6.Run())
+						{
+							yield return 100;
+						}
+					}
+
+					// Add connections to other Classes for other continents here...
+					//  else if (API.Me.ContinentID == 1) {
+					//	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
+					//	while(check.Run()) 
+					//		yield retun 100;
+					//  }
+				}
 			}
 		}
 		yield break;
@@ -1424,6 +1458,10 @@ public class Merchant
 			List<object> closest = GetClosestMerchant(2);
 			if (closest.Count > 0 || (HasRepairMount() && API.ExecuteLua<bool>("return IsOutdoors();")))
 			{
+				
+				// To be used on ensuring a need to do special pathing on return.
+				Vector3 currentPosition = API.Me.Position;
+				
 				if (HasRepairMount())
 				{
 					yield return 1000; // 1 second delay to stop player from moving.
@@ -1479,6 +1517,30 @@ public class Merchant
 				Repair();
 
 				API.ExecuteLua("CloseMerchant()");
+				
+				// Special return pathing considerations
+				// Note, this will only under 2 conditions, player has moved a distance away, and 
+				// DraenorMerchants.SpecialPathingReturnIndex != 0
+				if (API.Me.Position.Distance(currentPosition) > 50)
+				{
+					int contID = API.Me.ContinentID;
+					// Draenor Continent
+					if (contID == 1116 || contID == 1265)
+					{
+						var check6 = new Fiber<int>(DraenorMerchants.DoSpecialReturnPathing());
+						while (check6.Run())
+						{
+							yield return 100;
+						}
+					}
+
+					// Add connections to other Classes for other continents here...
+					//  else if (API.Me.ContinentID == 1) {
+					//	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
+					//	while(check.Run()) 
+					//		yield retun 100;
+					//  }
+				}
 			}
 		}
 		yield break;
@@ -1599,6 +1661,9 @@ public class Merchant
 		}
 		if (InventoryIsFull())
 		{
+			// To be used on ensuring a need to do special pathing on return.
+			Vector3 currentPosition = API.Me.Position;
+			
 			var check = new Fiber<int>(ClearBagsAtVendor());
 			while(check.Run())
 			{
@@ -1612,6 +1677,30 @@ public class Merchant
 			Repair();
 
 			API.ExecuteLua("CloseMerchant()");
+			
+			// Special return pathing considerations
+			// Note, this will only under 2 conditions, player has moved a distance away, and 
+			// DraenorMerchants.SpecialPathingReturnIndex != 0
+			if (API.Me.Position.Distance(currentPosition) > 50)
+			{
+				int contID = API.Me.ContinentID;
+				// Draenor Continent
+				if (contID == 1116 || contID == 1265)
+				{
+					var check6 = new Fiber<int>(DraenorMerchants.DoSpecialReturnPathing());
+					while (check6.Run())
+					{
+						yield return 100;
+					}
+				}
+
+				// Add connections to other Classes for other continents here...
+				//  else if (API.Me.ContinentID == 1) {
+				//	var check = new Fiber<int>(Kalimdor.doSpecialPathing());
+				//	while(check.Run()) 
+				//		yield retun 100;
+				//  }
+			}
 		}
 		yield break;
 	}
